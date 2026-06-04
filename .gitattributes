@@ -1,2 +1,12 @@
-# Auto detect text files and perform LF normalization
-* text=auto
+# Normalize source files to LF across Windows, macOS, and Linux.
+* text=auto eol=lf
+
+# Keep packaged or media artifacts binary so Git never rewrites their bytes.
+*.zip binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.pdf binary
