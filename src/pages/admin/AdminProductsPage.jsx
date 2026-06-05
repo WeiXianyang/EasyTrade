@@ -15,30 +15,33 @@ import {
   Typography,
 } from 'antd';
 import { EditOutlined, PlusOutlined } from '@ant-design/icons';
-import { useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 import categoryService from '../../services/categoryService.js';
 import productService from '../../services/productService.js';
 import { formatCurrency } from '../../utils/format.js';
-import { useApp } from '../../contexts/useApp.js';
 
 export default function AdminProductsPage() {
   const { message } = App.useApp();
-  const { refresh } = useApp();
   const [form] = Form.useForm();
   const [keyword, setKeyword] = useState('');
   const [status, setStatus] = useState('all');
   const [editingProduct, setEditingProduct] = useState(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [version, setVersion] = useState(0);
   const categories = categoryService.getCategories();
-  const products = (() => {
+
+  const reload = useCallback(() => setVersion((v) => v + 1), []);
+
+  const products = useMemo(() => {
+    void version;
     const lowerKeyword = keyword.trim().toLowerCase();
     return productService.getAdminProducts().filter((product) => {
       const matchesKeyword = !lowerKeyword || product.name.toLowerCase().includes(lowerKeyword);
       const matchesStatus = status === 'all' || product.status === status;
       return matchesKeyword && matchesStatus;
     });
-  })();
+  }, [keyword, status, version]);
 
   const openDrawer = (product = null) => {
     setEditingProduct(product);
@@ -71,7 +74,7 @@ export default function AdminProductsPage() {
     }
     setDrawerOpen(false);
     form.resetFields();
-    refresh();
+    reload();
   };
 
   return (
@@ -145,7 +148,7 @@ export default function AdminProductsPage() {
                 unCheckedChildren="下架"
                 onChange={(checked) => {
                   productService.toggleStatus(record.id, checked ? 'on' : 'off');
-                  refresh();
+                  reload();
                 }}
               />
             ),
@@ -170,7 +173,7 @@ export default function AdminProductsPage() {
                   description="删除后前台和后台都不再显示该商品。"
                   onConfirm={() => {
                     productService.deleteProduct(record.id);
-                    refresh();
+                    reload();
                     message.success('商品已删除');
                   }}
                 >

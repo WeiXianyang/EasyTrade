@@ -11,57 +11,63 @@ export function AppProvider({ children }) {
   const [version, setVersion] = useState(0);
 
   const refresh = useCallback(() => {
-    setVersion((value) => value + 1);
+    setVersion((v) => v + 1);
   }, []);
 
-  const cartCount = currentUser ? cartService.getSelectedSummary(currentUser.id).count : 0;
+  // 每次渲染时直接从 localStorage 读取最新数据，version 变化驱动重渲染
+  const cartItems = currentUser ? cartService.getCart(currentUser.id) : [];
+  const cartSummary = currentUser ? cartService.getSelectedSummary(currentUser.id) : { count: 0, total: 0 };
+  const cartCount = cartSummary.count;
 
-  const value = useMemo(
-    () => ({
-      currentUser,
-      currentAdmin,
-      cartCount,
-      cartDrawerOpen,
-      version,
-      refresh,
-      refreshCart: refresh,
-      openCart() {
-        setCartDrawerOpen(true);
-      },
-      closeCart() {
-        setCartDrawerOpen(false);
-      },
-      loginUser(identifier, password) {
-        const user = authService.loginUser(identifier, password);
-        setCurrentUser(user);
-        refresh();
-        return user;
-      },
-      registerUser(values) {
-        const user = authService.registerUser(values);
-        setCurrentUser(user);
-        refresh();
-        return user;
-      },
-      logoutUser() {
-        authService.logoutUser();
-        setCurrentUser(null);
-        refresh();
-      },
-      loginAdmin(identifier, password) {
-        const admin = authService.loginAdmin(identifier, password);
-        setCurrentAdmin(admin);
-        refresh();
-        return admin;
-      },
-      logoutAdmin() {
-        authService.logoutAdmin();
-        setCurrentAdmin(null);
-        refresh();
-      },
-    }),
-    [cartCount, cartDrawerOpen, currentAdmin, currentUser, refresh, version],
-  );
+  const openCart = useCallback(() => setCartDrawerOpen(true), []);
+  const closeCart = useCallback(() => setCartDrawerOpen(false), []);
+  const loginUser = useCallback((identifier, password) => {
+    const user = authService.loginUser(identifier, password);
+    setCurrentUser(user);
+    setVersion((v) => v + 1);
+    return user;
+  }, []);
+  const registerUser = useCallback((values) => {
+    const user = authService.registerUser(values);
+    setCurrentUser(user);
+    setVersion((v) => v + 1);
+    return user;
+  }, []);
+  const logoutUser = useCallback(() => {
+    authService.logoutUser();
+    setCurrentUser(null);
+    setVersion((v) => v + 1);
+  }, []);
+  const loginAdmin = useCallback((identifier, password) => {
+    const admin = authService.loginAdmin(identifier, password);
+    setCurrentAdmin(admin);
+    setVersion((v) => v + 1);
+    return admin;
+  }, []);
+  const logoutAdmin = useCallback(() => {
+    authService.logoutAdmin();
+    setCurrentAdmin(null);
+    setVersion((v) => v + 1);
+  }, []);
+
+  const value = useMemo(() => ({
+    currentUser,
+    currentAdmin,
+    cartCount,
+    cartItems,
+    cartSummary,
+    cartDrawerOpen,
+    version,
+    refresh,
+    refreshCart: refresh,
+    openCart,
+    closeCart,
+    loginUser,
+    registerUser,
+    logoutUser,
+    loginAdmin,
+    logoutAdmin,
+  }), [currentUser, currentAdmin, cartCount, cartItems, cartSummary, cartDrawerOpen, version, refresh, openCart, closeCart, loginUser, registerUser, logoutUser, loginAdmin, logoutAdmin]);
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }

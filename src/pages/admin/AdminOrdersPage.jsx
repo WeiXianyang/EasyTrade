@@ -1,5 +1,5 @@
 import { App, Button, Card, Descriptions, Input, Modal, Space, Table, Tag, Typography } from 'antd';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 
 import { useApp } from '../../contexts/useApp.js';
 import orderService from '../../services/orderService.js';
@@ -7,11 +7,17 @@ import { formatCurrency, formatOrderStatus } from '../../utils/format.js';
 
 export default function AdminOrdersPage() {
   const { message } = App.useApp();
-  const { currentAdmin, refresh, version } = useApp();
+  const { currentAdmin } = useApp();
   const [shippingOrder, setShippingOrder] = useState(null);
   const [trackingNo, setTrackingNo] = useState('');
-  const orders = orderService.getAllOrders();
+  const [version, setVersion] = useState(0);
   const isAdmin = currentAdmin.role === 'admin';
+
+  const reload = useCallback(() => setVersion((v) => v + 1), []);
+
+  // version 变化驱动重渲染，每次渲染重新读取最新数据
+  void version;
+  const orders = orderService.getAllOrders();
 
   const shipOrder = () => {
     if (!trackingNo.trim()) {
@@ -21,7 +27,7 @@ export default function AdminOrdersPage() {
     orderService.shipOrder(shippingOrder.id, trackingNo.trim());
     setShippingOrder(null);
     setTrackingNo('');
-    refresh();
+    reload();
     message.success('订单已发货');
   };
 
@@ -39,7 +45,6 @@ export default function AdminOrdersPage() {
         pagination={{ pageSize: 8 }}
         scroll={{ x: 1080 }}
         tableLayout="fixed"
-        key={version}
         expandable={{
           expandedRowRender: (record) => (
             <Card>
