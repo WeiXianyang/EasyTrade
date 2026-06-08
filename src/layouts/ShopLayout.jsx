@@ -54,7 +54,7 @@ export default function ShopLayout() {
         <div className="shop-header-inner">
           <div className="shop-header-main">
             <Link className="brand" to="/">
-              <span className="brand-mark">ET</span>
+              <span className="brand-mark"></span>
               <span>EasyTrade</span>
             </Link>
             <Space>
