@@ -1,6 +1,6 @@
 import { App, Button, Card, Col, Empty, Row, Segmented, Space, Typography } from 'antd';
 import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate,useSearchParams } from 'react-router-dom';
 
 import ProductCard from '../components/shop/ProductCard.jsx';
 import { useApp } from '../contexts/useApp.js';
@@ -13,7 +13,8 @@ export default function CategoryPage() {
   const { message } = App.useApp();
   const { currentUser, openCart, refresh } = useApp();
   const categories = categoryService.getCategories();
-  const [categoryId, setCategoryId] = useState('all');
+  const [searchParams] = useSearchParams();
+  const [categoryId, setCategoryId] = useState(() => searchParams.get('cat') || 'all');
   const products = useMemo(
     () =>
       productService.getVisibleProducts({
@@ -21,6 +22,9 @@ export default function CategoryPage() {
       }),
     [categoryId],
   );
+
+    const currentCategory = categoryId === 'all' ? null : categories.find((c) => c.id === categoryId);
+
 
   const handleAddCart = (product) => {
     if (!currentUser) {
@@ -35,38 +39,51 @@ export default function CategoryPage() {
   };
 
   return (
-    <Space orientation="vertical" size={24} style={{ width: '100%' }}>
-      <div className="section-head">
-        <div>
-          <Typography.Title level={2}>商品分类</Typography.Title>
-          <Typography.Text className="muted">按分类浏览所有在售商品，后台下架商品不会出现在前台。</Typography.Text>
+    <Space orientation='vertical' size={24} style={{ width: '100%' }}>
+      {/* 横向滑动分类标签栏 */}
+      <div className = 'category-tabs-wrap'>
+        <div className = 'category-tabs'>
+          <div
+            className={`category-tab${categoryId === 'all' ? ' active' : ''}`}
+            onClick={() => setCategoryId('all')}
+          >
+            所有商品
+          </div>
+          {categories.map((cat)=>(
+            <div
+              key={cat.id}
+              className={`category-tab${categoryId === cat.id ? ' active' : ''}`}
+              onClick={() => setCategoryId((prev) => (prev === cat.id ? 'all' : cat.id))}
+            >
+              {cat.name}
+            </div>
+          ))}
         </div>
-        <Segmented
-          value={categoryId}
-          onChange={setCategoryId}
-          options={[{ label: '全部', value: 'all' }, ...categories.map((category) => ({
-            label: category.name,
-            value: category.id,
-          }))]}
-        />
       </div>
 
-      <Row gutter={[16, 16]}>
-        {categories.map((category) => (
-          <Col key={category.id} xs={24} sm={12} lg={6}>
-            <Card hoverable onClick={() => setCategoryId(category.id)}>
-              <Typography.Title level={4}>{category.name}</Typography.Title>
-              <Typography.Text className="muted">{category.description}</Typography.Text>
-              <div style={{ marginTop: 16 }}>
-                <Button size="small">查看商品</Button>
-              </div>
-            </Card>
-          </Col>
-        ))}
-      </Row>
-
+      {/* 当前分类信息 */}
+      <div className="category-info">
+        <span className="category-info-title">
+          {currentCategory ? currentCategory.name : '全部商品'}
+        </span>
+        <span className="category-info-count">
+          共 {products.length} 件
+        </span>
+      </div>
+      
+      {/* 商品列表 / 空状态 */}
       {products.length === 0 ? (
-        <Empty description="当前分类暂无在售商品" />
+        <div className="category-empty">
+          <Empty
+            description={
+              categoryId === 'all'
+                ? '暂无在售商品，请稍后再来'
+                : `「${currentCategory?.name}」分类暂无在售商品`
+            }
+          >
+            <Button onClick={() => navigate('/')}>返回首页</Button>
+          </Empty>
+        </div>
       ) : (
         <Row gutter={[16, 16]}>
           {products.map((product) => (
@@ -76,6 +93,7 @@ export default function CategoryPage() {
           ))}
         </Row>
       )}
+
     </Space>
   );
 }

@@ -1,4 +1,5 @@
 import { Badge, Button, Drawer, Empty, Image, InputNumber, Layout, List, Space, Typography } from 'antd';
+import {useEffect, useState} from 'react';
 import {
   AppstoreOutlined,
   DashboardOutlined,
@@ -31,6 +32,23 @@ function selectedKey(pathname) {
 
 export default function ShopLayout() {
   const location = useLocation();
+
+  const [headerHidden, setHeaderHidden] = useState(false);
+  useEffect(()=>{
+    let lastScrollY = window.scrollY;
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      if(currentScrollY > 100 && lastScrollY < currentScrollY) {
+        setHeaderHidden(true);
+      }
+      else{
+        setHeaderHidden(false);
+      }
+    };
+    window.addEventListener('scroll', handleScroll, {passive: true});
+    return () => window.removeEventListener('scroll', handleScroll);
+    
+  }, []);
   const navigate = useNavigate();
   const { cartCount, cartDrawerOpen, closeCart, currentUser, logoutUser, openCart: openCartDrawer, refresh } = useApp();
   const activeKey = selectedKey(location.pathname);
@@ -50,7 +68,7 @@ export default function ShopLayout() {
 
   return (
     <Layout className="shop-layout">
-      <Layout.Header className="shop-header">
+      <Layout.Header className={`shop-header${headerHidden ? ' hidden' : ''}`}>
         <div className="shop-header-inner">
           <div className="shop-header-main">
             <Link className="brand" to="/">
