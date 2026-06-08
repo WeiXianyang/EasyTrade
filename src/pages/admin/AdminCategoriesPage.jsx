@@ -1,17 +1,21 @@
 import { App, Button, Drawer, Form, Input, Popconfirm, Space, Table, Typography } from 'antd';
 import { EditOutlined, PlusOutlined } from '@ant-design/icons';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 
 import categoryService from '../../services/categoryService.js';
 import productService from '../../services/productService.js';
-import { useApp } from '../../contexts/useApp.js';
 
 export default function AdminCategoriesPage() {
   const { message } = App.useApp();
-  const { refresh } = useApp();
   const [form] = Form.useForm();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
+  const [version, setVersion] = useState(0);
+
+  const reload = useCallback(() => setVersion((v) => v + 1), []);
+
+  // version 变化驱动重渲染，每次渲染重新读取最新数据
+  void version;
   const categories = categoryService.getCategories();
   const products = productService.getAdminProducts();
 
@@ -37,7 +41,7 @@ export default function AdminCategoriesPage() {
         message.success('分类已新增');
       }
       closeDrawer();
-      refresh();
+      reload();
     } catch (error) {
       message.error(error.message);
     }
@@ -46,7 +50,7 @@ export default function AdminCategoriesPage() {
   const deleteCategory = (categoryId) => {
     try {
       categoryService.deleteCategory(categoryId, products);
-      refresh();
+      reload();
       message.success('分类已删除');
     } catch (error) {
       message.error(error.message);

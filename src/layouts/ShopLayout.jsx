@@ -9,6 +9,7 @@ import {
   ShoppingCartOutlined,
   UserOutlined,
 } from '@ant-design/icons';
+import { useEffect, useReducer } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 
 import { useApp } from '../contexts/useApp.js';
@@ -53,12 +54,25 @@ export default function ShopLayout() {
   const { cartCount, cartDrawerOpen, closeCart, currentUser, logoutUser, openCart: openCartDrawer, refresh } = useApp();
   const activeKey = selectedKey(location.pathname);
 
+  // 本地 state 持有购物车快照，Drawer 打开时强制刷新
+  const [localVersion, forceUpdate] = useReducer((n) => n + 1, 0);
+
+  useEffect(() => {
+    if (cartDrawerOpen) {
+      forceUpdate(); // Drawer 每次打开时重新从 localStorage 读取
+    }
+  }, [cartDrawerOpen]);
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const cartItems = currentUser ? cartService.getCart(currentUser.id) : [];
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const cartSummary = currentUser ? cartService.getSelectedSummary(currentUser.id) : { count: 0, total: 0 };
+  void localVersion; // 消费 localVersion，使上方两行在 forceUpdate 后重新执行
 
   const updateCart = (action) => {
     action();
     refresh();
+    forceUpdate(); // Drawer 内操作（删除/改数量）后立即刷新列表
   };
 
   const goCheckout = () => {
