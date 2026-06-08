@@ -14,9 +14,13 @@ export function AppProvider({ children }) {
     setVersion((v) => v + 1);
   }, []);
 
-  // 每次渲染时直接从 localStorage 读取最新数据，version 变化驱动重渲染
-  const cartItems = currentUser ? cartService.getCart(currentUser.id) : [];
-  const cartSummary = currentUser ? cartService.getSelectedSummary(currentUser.id) : { count: 0, total: 0 };
+  const { cartItems, cartSummary } = useMemo(() => {
+    void version;
+    return {
+      cartItems: currentUser ? cartService.getCart(currentUser.id) : [],
+      cartSummary: currentUser ? cartService.getSelectedSummary(currentUser.id) : { count: 0, total: 0 },
+    };
+  }, [currentUser, version]);
   const cartCount = cartSummary.count;
 
   const openCart = useCallback(() => setCartDrawerOpen(true), []);

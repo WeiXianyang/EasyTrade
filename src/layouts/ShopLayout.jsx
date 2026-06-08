@@ -1,5 +1,5 @@
 import { Badge, Button, Drawer, Empty, Image, InputNumber, Layout, List, Space, Typography } from 'antd';
-import {useEffect, useState} from 'react';
+import { useEffect, useReducer, useState } from 'react';
 import {
   AppstoreOutlined,
   DashboardOutlined,
@@ -9,7 +9,6 @@ import {
   ShoppingCartOutlined,
   UserOutlined,
 } from '@ant-design/icons';
-import { useEffect, useReducer } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 
 import { useApp } from '../contexts/useApp.js';
@@ -63,9 +62,7 @@ export default function ShopLayout() {
     }
   }, [cartDrawerOpen]);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const cartItems = currentUser ? cartService.getCart(currentUser.id) : [];
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   const cartSummary = currentUser ? cartService.getSelectedSummary(currentUser.id) : { count: 0, total: 0 };
   void localVersion; // 消费 localVersion，使上方两行在 forceUpdate 后重新执行
 

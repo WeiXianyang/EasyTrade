@@ -277,6 +277,20 @@ a {
   flex-wrap: wrap;
 }
 
+.admin-topbar-inner {
+  width: 100%;
+  justify-content: flex-end;
+}
+
+.admin-ops-tools {
+  justify-content: flex-end;
+}
+
+.admin-user-name,
+.admin-role-name {
+  white-space: nowrap;
+}
+
 .ant-table {
   min-width: 0;
 }
@@ -369,6 +383,11 @@ a {
   .admin-topbar {
     justify-content: flex-start;
     padding: 8px 16px;
+  }
+
+  .admin-topbar-inner,
+  .admin-ops-tools {
+    justify-content: flex-start;
   }
 
   .form-inline-grid {
@@ -701,4 +720,3 @@ a {
     aspect-ratio: 16 / 10;
   }
 }
-

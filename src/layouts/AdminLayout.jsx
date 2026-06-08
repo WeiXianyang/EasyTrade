@@ -10,6 +10,7 @@ import {
 } from '@ant-design/icons';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 
+import AdminOpsTools from '../components/admin/AdminOpsTools.jsx';
 import { useApp } from '../contexts/useApp.js';
 import { canAccess, getRoleLabel } from '../services/permissionService.js';
 
@@ -47,9 +48,10 @@ export default function AdminLayout() {
       </Layout.Sider>
       <Layout>
         <Layout.Header className="admin-topbar">
-          <Space>
-            <span>{currentAdmin.name}</span>
-            <span className="muted">{getRoleLabel(currentAdmin.role)}</span>
+          <Space className="admin-topbar-inner">
+            <AdminOpsTools />
+            <span className="admin-user-name">{currentAdmin.name}</span>
+            <span className="muted admin-role-name">{getRoleLabel(currentAdmin.role)}</span>
             <Button icon={<ShopOutlined />} onClick={() => navigate('/')}>
               返回商城
             </Button>

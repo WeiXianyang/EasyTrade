@@ -4,6 +4,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import PriceText from '../components/shop/PriceText.jsx';
 import { useApp } from '../contexts/useApp.js';
 import cartService from '../services/cartService.js';
+import mockApiService from '../services/mockApiService.js';
 import orderService from '../services/orderService.js';
 import productService from '../services/productService.js';
 import { formatCurrency } from '../utils/format.js';
@@ -40,9 +41,25 @@ export default function CheckoutPage() {
 
   const submitOrder = (values) => {
     try {
-      const order = orderService.createOrderFromCart(currentUser.id, checkoutItems, values);
+      const order = mockApiService.request({
+        method: 'POST',
+        path: '/orders',
+        actor: currentUser,
+        moduleName: '前台订单',
+        action: '创建订单',
+        target: checkoutItems.map((item) => item.product.name).join('、'),
+        handler: () => orderService.createOrderFromCart(currentUser.id, checkoutItems, values),
+      });
       if (!buyNowProductId) {
-        cartService.removeSelected(currentUser.id);
+        mockApiService.request({
+          method: 'DELETE',
+          path: '/cart/items/selected',
+          actor: currentUser,
+          moduleName: '前台购物车',
+          action: '清理已结算商品',
+          target: '购物车已选商品',
+          handler: () => cartService.removeSelected(currentUser.id),
+        });
       }
       refresh();
       message.success('订单已创建');

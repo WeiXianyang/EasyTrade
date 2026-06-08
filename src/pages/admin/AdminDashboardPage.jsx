@@ -1,8 +1,11 @@
-import { Card, Col, Row, Space, Statistic, Table, Tag, Typography } from 'antd';
+import { Card, Col, Row, Space, Statistic, Steps, Table, Tag, Typography } from 'antd';
 
 import PermissionNotice from '../../components/admin/PermissionNotice.jsx';
 import { useApp } from '../../contexts/useApp.js';
+import auditLogService from '../../services/auditLogService.js';
+import demoService from '../../services/demoService.js';
 import productService from '../../services/productService.js';
+import requestLogService from '../../services/requestLogService.js';
 import orderService from '../../services/orderService.js';
 import { formatCurrency, formatOrderStatus } from '../../utils/format.js';
 
@@ -12,6 +15,9 @@ export default function AdminDashboardPage() {
   const orders = orderService.getAllOrders();
   const paidOrders = orders.filter((order) => order.status === 'paid' || order.status === 'shipped');
   const totalSales = orders.reduce((sum, order) => sum + order.totalAmount, 0);
+  const requestLogs = requestLogService.getRequestLogs(5);
+  const auditLogs = auditLogService.getAuditLogs(5);
+  const scenarioSteps = demoService.getScenarioSteps();
 
   return (
     <Space orientation="vertical" size={18} style={{ width: '100%' }}>
@@ -63,6 +69,42 @@ export default function AdminDashboardPage() {
           ]}
         />
       </Card>
+      <Row gutter={[16, 16]}>
+        <Col xs={24} lg={10}>
+          <Card title="答辩演示助手">
+            <Steps
+              direction="vertical"
+              size="small"
+              current={-1}
+              items={scenarioSteps.map((step) => ({
+                title: step.title,
+                description: step.description,
+              }))}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} lg={14}>
+          <Card title="最近操作审计">
+            <Table
+              rowKey="id"
+              dataSource={auditLogs}
+              pagination={false}
+              scroll={{ x: 720 }}
+              tableLayout="fixed"
+              columns={[
+                { title: '时间', dataIndex: 'createdAt', width: 170, ellipsis: true },
+                { title: '操作人', dataIndex: 'actorName', width: 120, ellipsis: true },
+                { title: '模块', dataIndex: 'moduleName', width: 120, ellipsis: true },
+                { title: '动作', dataIndex: 'action', width: 130, ellipsis: true },
+                { title: '对象', dataIndex: 'target', width: 150, ellipsis: true },
+              ]}
+            />
+          </Card>
+        </Col>
+      </Row>
+      <Typography.Text className="muted">
+        Mock API 最近记录 {requestLogs.length} 条，审计最近记录 {auditLogs.length} 条。
+      </Typography.Text>
       <Typography.Text className="muted">版本刷新标识：{version}</Typography.Text>
     </Space>
   );

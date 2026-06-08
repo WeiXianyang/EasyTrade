@@ -1,4 +1,4 @@
-import { App, Button, Card, Col, Empty, Row, Segmented, Space, Typography } from 'antd';
+import { App, Button, Col, Empty, Row, Space } from 'antd';
 import { useMemo, useState } from 'react';
 import { useNavigate,useSearchParams } from 'react-router-dom';
 
@@ -6,6 +6,7 @@ import ProductCard from '../components/shop/ProductCard.jsx';
 import { useApp } from '../contexts/useApp.js';
 import cartService from '../services/cartService.js';
 import categoryService from '../services/categoryService.js';
+import mockApiService from '../services/mockApiService.js';
 import productService from '../services/productService.js';
 
 export default function CategoryPage() {
@@ -32,7 +33,15 @@ export default function CategoryPage() {
       navigate('/login');
       return;
     }
-    cartService.addItem(currentUser.id, product.id, 1);
+    mockApiService.request({
+      method: 'POST',
+      path: '/cart/items',
+      actor: currentUser,
+      moduleName: '前台购物车',
+      action: '加入购物车',
+      target: product.name,
+      handler: () => cartService.addItem(currentUser.id, product.id, 1),
+    });
     refresh();
     openCart();
     message.success('已加入购物车');

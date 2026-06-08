@@ -1,5 +1,5 @@
-import { App, Button, Carousel, Col, Input, Row, Space, Statistic, Typography } from 'antd';
-import { FireOutlined, SearchOutlined, ShoppingCartOutlined } from '@ant-design/icons';
+import { App, Button, Carousel, Col, Input, Row, Space, Typography } from 'antd';
+import { FireOutlined, ShoppingCartOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useMemo, useState, useRef } from 'react';
 
@@ -7,7 +7,10 @@ import ProductCard from '../components/shop/ProductCard.jsx';
 import { useApp } from '../contexts/useApp.js';
 import cartService from '../services/cartService.js';
 import categoryService from '../services/categoryService.js';
+import mockApiService from '../services/mockApiService.js';
 import productService from '../services/productService.js';
+
+const searchPlaceholders = ['搜索手机、咖啡、台灯、跑鞋', '搜索数码好物', '搜索运动装备', '搜索精选食品'];
 
 export default function HomePage() {
   const navigate = useNavigate();
@@ -30,10 +33,9 @@ export default function HomePage() {
   }, []);
 
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
-  const placeholders = ['搜索手机、咖啡、台灯、跑鞋', '搜索数码好物', '搜索运动装备', '搜索精选食品'];
   useEffect(() => {
     const timer = setInterval(() => {
-      setPlaceholderIndex((i) => (i + 1) % placeholders.length);
+      setPlaceholderIndex((i) => (i + 1) % searchPlaceholders.length);
     }, 3000);
     return () => clearInterval(timer);
   }, []);
@@ -48,7 +50,15 @@ export default function HomePage() {
       navigate('/login');
       return;
     }
-    cartService.addItem(currentUser.id, product.id, 1);
+    mockApiService.request({
+      method: 'POST',
+      path: '/cart/items',
+      actor: currentUser,
+      moduleName: '前台购物车',
+      action: '加入购物车',
+      target: product.name,
+      handler: () => cartService.addItem(currentUser.id, product.id, 1),
+    });
     refresh();
     openCart();
     message.success('已加入购物车');
@@ -61,7 +71,7 @@ export default function HomePage() {
           ref={searchInputRef}
           size="large"
           allowClear
-          placeholder={placeholders[placeholderIndex]}
+          placeholder={searchPlaceholders[placeholderIndex]}
           onSearch={setKeyword}
           onChange={(event) => setKeyword(event.target.value)}
           style={{ width: '100%' }}

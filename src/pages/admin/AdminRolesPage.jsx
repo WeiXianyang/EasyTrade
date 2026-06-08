@@ -3,6 +3,7 @@ import { ReloadOutlined } from '@ant-design/icons';
 import { useState } from 'react';
 
 import { useApp } from '../../contexts/useApp.js';
+import mockApiService from '../../services/mockApiService.js';
 import permissionService, { getRoleLabel } from '../../services/permissionService.js';
 
 const roleRows = [
@@ -24,14 +25,31 @@ export default function AdminRolesPage() {
     const nextModules = checked
       ? [...currentModules, moduleName]
       : currentModules.filter((item) => item !== moduleName);
-    const nextPermissions = permissionService.updateRolePermissions(role, nextModules);
+    const moduleLabel = modules.find((module) => module.key === moduleName)?.label || moduleName;
+    const nextPermissions = mockApiService.request({
+      method: 'PATCH',
+      path: `/admin/roles/${role}`,
+      actor: currentAdmin,
+      moduleName: '权限管理',
+      action: checked ? '开放角色模块' : '关闭角色模块',
+      target: `${getRoleLabel(role)} - ${moduleLabel}`,
+      handler: () => permissionService.updateRolePermissions(role, nextModules),
+    });
     setPermissions(nextPermissions);
     refresh();
     message.success('权限配置已更新');
   };
 
   const resetPermissions = () => {
-    const nextPermissions = permissionService.resetRolePermissions();
+    const nextPermissions = mockApiService.request({
+      method: 'POST',
+      path: '/admin/roles/reset',
+      actor: currentAdmin,
+      moduleName: '权限管理',
+      action: '恢复默认权限',
+      target: '全部角色',
+      handler: () => permissionService.resetRolePermissions(),
+    });
     setPermissions(nextPermissions);
     refresh();
     message.success('权限配置已恢复默认');

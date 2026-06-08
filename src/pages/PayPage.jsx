@@ -2,6 +2,8 @@ import { App, Button, Card, Progress, Result, Space, Steps, Typography } from 'a
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
+import { useApp } from '../contexts/useApp.js';
+import mockApiService from '../services/mockApiService.js';
 import orderService from '../services/orderService.js';
 import { formatCurrency, formatOrderStatus } from '../utils/format.js';
 
@@ -9,6 +11,7 @@ export default function PayPage() {
   const { orderId } = useParams();
   const navigate = useNavigate();
   const { message } = App.useApp();
+  const { currentUser, refresh } = useApp();
   const [seconds, setSeconds] = useState(60);
   const [paid, setPaid] = useState(false);
   const order = orderService.getOrderById(orderId);
@@ -35,8 +38,17 @@ export default function PayPage() {
 
   const handlePay = () => {
     try {
-      orderService.payOrder(order.id);
+      mockApiService.request({
+        method: 'PATCH',
+        path: `/orders/${order.id}/pay`,
+        actor: currentUser,
+        moduleName: '前台支付',
+        action: '模拟支付',
+        target: order.orderNo,
+        handler: () => orderService.payOrder(order.id),
+      });
       setPaid(true);
+      refresh();
       message.success('支付成功');
     } catch (error) {
       message.error(error.message);

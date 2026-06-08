@@ -7,6 +7,7 @@ import PriceText from '../components/shop/PriceText.jsx';
 import { useApp } from '../contexts/useApp.js';
 import cartService from '../services/cartService.js';
 import categoryService from '../services/categoryService.js';
+import mockApiService from '../services/mockApiService.js';
 import productService from '../services/productService.js';
 
 export default function ProductDetailPage() {
@@ -35,7 +36,15 @@ export default function ProductDetailPage() {
 
   const addCart = () => {
     if (!ensureLogin()) return;
-    cartService.addItem(currentUser.id, product.id, quantity);
+    mockApiService.request({
+      method: 'POST',
+      path: '/cart/items',
+      actor: currentUser,
+      moduleName: '前台购物车',
+      action: '加入购物车',
+      target: product.name,
+      handler: () => cartService.addItem(currentUser.id, product.id, quantity),
+    });
     refresh();
     openCart();
     message.success('已加入购物车');
