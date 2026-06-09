@@ -1,10 +1,10 @@
 /* eslint-disable react-refresh/only-export-components */
 import { Suspense, lazy } from 'react';
-import { Spin } from 'antd';
 import { createHashRouter, Navigate } from 'react-router-dom';
 
 import App from './App';
 import { RequireAdmin } from './components/RouteGuards.jsx';
+import PageSkeleton from './components/shop/PageSkeleton.jsx';
 
 const AdminLayout = lazy(() => import('./layouts/AdminLayout.jsx'));
 const AdminDashboardPage = lazy(() => import('./pages/admin/AdminDashboardPage.jsx'));
@@ -14,11 +14,7 @@ const AdminOrdersPage = lazy(() => import('./pages/admin/AdminOrdersPage.jsx'));
 const AdminProductsPage = lazy(() => import('./pages/admin/AdminProductsPage.jsx'));
 const AdminRolesPage = lazy(() => import('./pages/admin/AdminRolesPage.jsx'));
 
-const AdminLoader = (
-  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
-    <Spin size="large" description="后台加载中..." />
-  </div>
-);
+const AdminLoader = <PageSkeleton />;
 
 const adminLogin = (
   <Suspense fallback={AdminLoader}>

@@ -158,6 +158,15 @@ test('lazy route fallback uses a storefront page skeleton instead of a plain spi
   assert.match(pageSkeleton, /page-skeleton-card/);
 });
 
+test('standalone admin route fallback uses the shared page skeleton instead of a plain spinner', () => {
+  const adminRouter = readSource('src/admin-router.jsx');
+
+  assert.match(adminRouter, /PageSkeleton/);
+  assert.match(adminRouter, /const AdminLoader\s*=\s*<PageSkeleton\s*\/>/);
+  assert.doesNotMatch(adminRouter, /Spin/);
+  assert.match(adminRouter, /fallback=\{AdminLoader\}/);
+});
+
 test('home page exposes a discounted flash sale section with floating seckill labels', () => {
   const homePage = readSource('src/pages/HomePage.jsx');
   const themeCss = readSource('src/theme/theme.css');
