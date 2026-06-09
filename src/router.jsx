@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { Suspense, lazy } from 'react';
 import { Spin } from 'antd';
 import { createBrowserRouter } from 'react-router-dom';

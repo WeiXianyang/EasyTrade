@@ -3,7 +3,6 @@ import { DeleteOutlined, ShoppingOutlined } from '@ant-design/icons';
 import { useCallback, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import PriceText from '../components/shop/PriceText.jsx';
 import { useApp } from '../contexts/useApp.js';
 import cartService from '../services/cartService.js';
 import { formatCurrency } from '../utils/format.js';
@@ -41,7 +40,7 @@ export default function CartPage() {
     {
       title: '单价',
       width: 130,
-      render: (_, record) => <PriceText price={record.product.price} originalPrice={record.product.originalPrice} />,
+      render: (_, record) => <Typography.Text className="price">{formatCurrency(record.product.price)}</Typography.Text>,
     },
     {
       title: '数量',
@@ -140,8 +139,8 @@ export default function CartPage() {
         <Space>
           <Typography.Text>已选 {summary.count} 件</Typography.Text>
           <Typography.Title level={4} className="cart-total-price">
-              {formatCurrency(summary.total)}
-            </Typography.Title>
+            {formatCurrency(summary.total)}
+          </Typography.Title>
           <Button
             type="primary"
             disabled={summary.count === 0}

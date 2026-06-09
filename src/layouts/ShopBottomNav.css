@@ -1,0 +1,107 @@
+
+.shop-bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: space-evenly;
+  width: min(760px, calc(100% - 24px));
+  margin: 0 auto;
+  padding: 4px 8px calc(4px + env(safe-area-inset-bottom));
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid #e5eaf0;
+  border-bottom: 0;
+  border-radius: 16px 16px 0 0;
+  backdrop-filter: blur(14px);
+  box-shadow: 0 -4px 20px rgba(15, 23, 42, 0.08);
+}
+
+.shop-bottom-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 8px 18px;
+  color: #94a3b8;
+  font-size: 11px;
+  line-height: 1.2;
+  text-decoration: none;
+  transition: all 200ms;
+  position: relative;
+  cursor: pointer;
+  min-width: 0;
+}
+
+.shop-bottom-nav-item svg,
+.shop-bottom-nav-item .anticon {
+  width: 18px;
+  height: 18px;
+  transition: all 300ms;
+  fill: #94a3b8;
+}
+
+.shop-bottom-nav-item span {
+  transition: color 200ms;
+}
+
+/* 底部指示线 */
+.shop-bottom-nav-item::before {
+  content: "";
+  display: block;
+  width: 0%;
+  height: 2.5px;
+  border-radius: 5px;
+  position: absolute;
+  left: 50%;
+  top: -1px;  /* 因为 nav 有 border-top，所以指示线放在上面 */
+  background: #f04f3e;
+  transition: all 200ms;
+}
+
+/* hover 效果 */
+.shop-bottom-nav-item:hover svg {
+  fill: #f04f3e;
+  opacity: 0.6;
+}
+
+.shop-bottom-nav-item:hover span {
+  color: #f04f3e;
+}
+
+/* 选中效果 */
+.shop-bottom-nav-item.active svg {
+  fill: #f04f3e;
+  scale: 1.15;
+  margin-top: -3px;
+}
+
+.shop-bottom-nav-item.active span {
+  color: #f04f3e;
+  font-weight: 600;
+}
+
+.shop-bottom-nav-item.active::before {
+  width: 100%;
+  left: 0;
+}
+
+/* 响应式 */
+@media (max-width: 480px) {
+  .shop-bottom-nav {
+    width: calc(100% - 16px);
+    padding: 4px 4px calc(4px + env(safe-area-inset-bottom));
+  }
+
+  .shop-bottom-nav-item {
+    padding: 6px 12px;
+    font-size: 10px;
+  }
+
+  .shop-bottom-nav-item svg {
+    width: 16px;
+    height: 16px;
+  }
+}

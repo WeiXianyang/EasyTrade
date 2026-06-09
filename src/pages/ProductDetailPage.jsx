@@ -17,13 +17,8 @@ export default function ProductDetailPage() {
   const { currentUser, openCart, refresh } = useApp();
   const [quantity, setQuantity] = useState(1);
   const product = productService.getProductById(productId);
-
-  if (!product) {
-    return <Empty description="商品不存在" />;
-  }
-
-  const category = categoryService.getCategoryById(product.categoryId);
-  const canBuy = product.status === 'on' && product.stock > 0;
+  const category = product ? categoryService.getCategoryById(product.categoryId) : null;
+  const canBuy = product ? product.status === 'on' && product.stock > 0 : false;
 
   const ensureLogin = useCallback(() => {
     if (!currentUser) {
@@ -35,6 +30,7 @@ export default function ProductDetailPage() {
   }, [currentUser, message, navigate]);
 
   const addCart = useCallback(() => {
+    if (!product) return;
     if (!ensureLogin()) return;
     mockApiService.request({
       method: 'POST',
@@ -51,9 +47,14 @@ export default function ProductDetailPage() {
   }, [ensureLogin, currentUser, product, quantity, refresh, openCart, message]);
 
   const buyNow = useCallback(() => {
+    if (!product) return;
     if (!ensureLogin()) return;
     navigate(`/checkout?buyNow=${product.id}&quantity=${quantity}`);
   }, [ensureLogin, navigate, product, quantity]);
+
+  if (!product) {
+    return <Empty description="商品不存在" />;
+  }
 
   return (
     <div className="page-card">

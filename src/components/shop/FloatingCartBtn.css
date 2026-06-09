@@ -1,0 +1,68 @@
+
+.floating-cart-btn {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: 52px;
+  height: 52px;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition-duration: 0.3s;
+  box-shadow: 0 12px 30px rgba(240, 79, 62, 0.30);
+  background-color: #f04f3e;
+}
+
+.floating-cart-btn .cart-icon-wrap {
+  width: 100%;
+  transition-duration: 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.floating-cart-btn .cart-icon-wrap svg {
+  width: 22px;
+  height: 22px;
+  color: #fff;
+}
+
+.floating-cart-btn .cart-text {
+  position: absolute;
+  right: 0%;
+  width: 0%;
+  opacity: 0;
+  color: #fff;
+  font-size: 1em;
+  font-weight: 600;
+  transition-duration: 0.3s;
+  white-space: nowrap;
+}
+
+/* hover 展开 */
+.floating-cart-btn:hover {
+  width: 130px;
+  border-radius: 40px;
+  transition-duration: 0.3s;
+}
+
+.floating-cart-btn:hover .cart-icon-wrap {
+  width: 30%;
+  transition-duration: 0.3s;
+  padding-left: 18px;
+}
+
+.floating-cart-btn:hover .cart-text {
+  opacity: 1;
+  width: 70%;
+  transition-duration: 0.3s;
+  padding-right: 14px;
+}
+
+/* 点击效果 */
+.floating-cart-btn:active {
+  transform: translate(1px, 1px);
+}

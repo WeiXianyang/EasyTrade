@@ -1,4 +1,4 @@
-import { Badge, Button, Divider, Drawer, Empty, Flex, Image, InputNumber, Layout, Space, Tooltip, Typography } from 'antd';
+import { Badge, Button, Drawer, Empty, Flex, Image, InputNumber, Layout, Space, Tooltip, Typography } from 'antd';
 import { useEffect, useReducer, useState } from 'react';
 import {
   AppstoreOutlined,
@@ -7,7 +7,6 @@ import {
   HomeOutlined,
   LoginOutlined,
   MoonOutlined,
-  ShoppingCartOutlined,
   SunOutlined,
   UserOutlined,
 } from '@ant-design/icons';
@@ -16,6 +15,9 @@ import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useApp } from '../contexts/useApp.js';
 import cartService from '../services/cartService.js';
 import { formatCurrency } from '../utils/format.js';
+import FloatingCartBtn from '../components/shop/FloatingCartBtn.jsx';
+import './ShopBottomNav.css'; 
+import LogoutBtn from '../components/shop/LogoutBtn.jsx';
 
 const navItems = [
   { key: '/', to: '/', icon: <HomeOutlined />, label: '首页' },
@@ -40,7 +42,7 @@ export default function ShopLayout() {
     let lastScrollY = window.scrollY;
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
-      if(currentScrollY > 100 && lastScrollY < currentScrollY) {
+      if(currentScrollY > 30 && lastScrollY < currentScrollY) {
         setHeaderHidden(true);
       }
       else{
@@ -101,9 +103,7 @@ export default function ShopLayout() {
               {currentUser ? (
                 <>
                   <span className="muted">{currentUser.name}</span>
-                  <Button size="small" onClick={logoutUser}>
-                    退出
-                  </Button>
+                  <LogoutBtn onClick={logoutUser}/>
                 </>
               ) : (
                 <Button icon={<LoginOutlined />} type="primary" onClick={() => navigate('/login')}>
@@ -129,14 +129,7 @@ export default function ShopLayout() {
         ))}
       </nav>
       <Badge count={cartCount} size="small" className="shop-floating-cart-badge">
-        <Button
-          aria-label="打开购物车"
-          className="shop-floating-cart"
-          type="primary"
-          shape="circle"
-          icon={<ShoppingCartOutlined />}
-          onClick={openCartDrawer}
-        />
+        <FloatingCartBtn onClick={openCartDrawer} />
       </Badge>
       <Drawer
         title="购物车"

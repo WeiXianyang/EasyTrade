@@ -1,0 +1,203 @@
+
+/* 翻转卡片 */
+.flip-card {
+  background-color: transparent;
+  width: 100%;
+  height: 280px;
+  perspective: 1000px;
+}
+
+.flip-card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  text-align: left;                     /* center → left */
+  transition: transform 0.6s;
+  transform-style: preserve-3d;
+}
+
+.flip-card:hover .flip-card-inner {
+  transform: rotateY(180deg);
+}
+
+/* 正反面公共 */
+.flip-card-front,
+.flip-card-back {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  padding: 24px;
+  border-radius: 12px;
+  backface-visibility: hidden;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+/* 正面 */
+.flip-card-front {
+  background: linear-gradient(135deg, #fff2ef 0%, #fff 100%);
+  border: 2px solid #f04f3e20;
+  justify-content: center;             /* 垂直居中 */
+  align-items: flex-start;             /* 左对齐 */
+}
+
+.flip-card-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(135deg, #f04f3e, #256d5a);
+  margin-bottom: 12px;
+  box-shadow: 0 4px 16px rgba(240, 79, 62, 0.25);
+}
+
+.flip-card-name {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1f2933;
+  margin: 0 0 4px;
+}
+
+.flip-card-role {
+  font-size: 14px;
+  color: #94a3b8;
+  margin: 0;
+}
+
+/* 翻转提示 */
+.flip-hint {
+  font-size: 11px;
+  color: #c0c8d4;
+  margin: 12px 0 0;
+}
+
+/* 背面 */
+.flip-card-back {
+  background: #fff;
+  border: 2px solid #edf1f4;
+  transform: rotateY(180deg);
+  padding: 24px;
+  align-items: stretch;                /* 子元素占满宽度 */
+}
+
+.flip-card-back-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1f2933;
+  margin: 0 0 16px;
+}
+
+.flip-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.flip-card-info-row {
+  display: flex;
+  justify-content: flex-start;
+  gap: 12px;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px solid #f0f2f5;
+}
+
+.flip-card-info-label {
+  font-size: 13px;
+  color: #94a3b8;
+}
+
+.flip-card-info-value {
+  font-size: 13px;
+  color: #1f2933;
+  font-weight: 500;
+}
+
+/* 查看全部订单 — 改为文字链接 */
+.flip-card-orders-link {
+  margin-top: 16px;
+  color: #f04f3e;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: color 0.2s;
+  display: inline-block;
+}
+
+.flip-card-orders-link:hover {
+  color: #e04435;
+  text-decoration: underline;
+}
+
+/* ====== 最近订单卡片 ====== */
+.me-orders-card {
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  height: 100%;                       /* 跟 flip card 等高 */
+  display: flex;
+  flex-direction: column;
+}
+
+.me-orders-card .ant-card-head {
+  border-bottom: 1px solid #edf1f4;
+  min-height: 48px;
+}
+
+.me-orders-card .ant-card-body {
+  flex: 1;
+  padding: 8px 16px;
+}
+
+.me-orders-card .ant-list-item {
+  padding: 10px 12px !important;
+  margin: 4px 0;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+}
+
+.me-orders-card .ant-list-item:hover {
+  background: #fff2ef;
+  border-color: #f04f3e15;
+}
+
+.me-orders-card .ant-list-item .ant-list-item-meta {
+  align-items: center;
+}
+
+.me-orders-card .ant-list-item-meta-title {
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  color: #1f2933 !important;
+  margin-bottom: 2px !important;
+}
+
+.me-orders-card .ant-list-item-meta-description {
+  font-size: 12px !important;
+  color: #94a3b8 !important;
+}
+
+.me-orders-card .ant-list-item-action {
+  margin-left: 8px;
+}
+
+/* 订单状态标签 */
+.me-orders-card .ant-tag {
+  border-radius: 4px;
+  font-size: 11px;
+  padding: 1px 8px;
+  margin: 0;
+}
+
+/* 订单金额 */
+.me-orders-card .ant-list-item .ant-typography-strong {
+  font-size: 13px;
+  color: #f04f3e;
+}

@@ -1,8 +1,8 @@
-import { App, Button, Card, Form, Input, Space, Typography } from 'antd';
-import { LockOutlined, UserOutlined } from '@ant-design/icons';
+import { App, Button, Form, Input } from 'antd';
 import { useNavigate } from 'react-router-dom';
 
 import { useApp } from '../../contexts/useApp.js';
+import '../LoginPage.css';          
 
 export default function AdminLoginPage() {
   const navigate = useNavigate();
@@ -20,29 +20,48 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', padding: 24 }}>
-      <Card style={{ width: 'min(420px, 100%)' }}>
-        <Space orientation="vertical" size={18} style={{ width: '100%' }}>
-          <div>
-            <Typography.Title level={2}>EasyTrade 后台登录</Typography.Title>
-            <Typography.Text className="muted">管理员：admin/admin123；运营：operator/operator123</Typography.Text>
-          </div>
-          <Form layout="vertical" onFinish={handleLogin}>
-            <Form.Item name="username" label="后台账号" rules={[{ required: true, message: '请输入后台账号' }]}>
-              <Input prefix={<UserOutlined />} placeholder="admin" />
-            </Form.Item>
-            <Form.Item name="password" label="密码" rules={[{ required: true, message: '请输入密码' }]}>
-              <Input.Password prefix={<LockOutlined />} placeholder="admin123" />
-            </Form.Item>
-            <Button block type="primary" htmlType="submit">
-              进入后台
-            </Button>
-            <Button block style={{ marginTop: 12 }} onClick={() => navigate('/')}>
-              返回商城
-            </Button>
-          </Form>
-        </Space>
-      </Card>
+    <div className="login-page">                          
+      <div className="login-form-container">              
+        <p className="login-title">EasyTrade 后台</p>     
+        <p className="login-subtitle">管理员 / 运营 登录入口</p>
+
+        <Form
+          className="login-form"                          
+          layout="vertical"
+          onFinish={handleLogin}
+        >
+          <Form.Item
+            name="username"
+            rules={[{ required: true, message: '请输入后台账号' }]}
+          >
+            <Input  placeholder="后台账号" />
+          </Form.Item>
+          <Form.Item
+            name="password"
+            rules={[{ required: true, message: '请输入密码' }]}
+          >
+            <Input.Password placeholder="密码" />
+          </Form.Item>
+
+          <button className="login-form-btn" type="submit">  {/* 复用按钮 */}
+            进入后台
+          </button>
+
+          <Button
+            block
+            style={{ borderRadius: 8 }}
+            onClick={() => navigate('/')}
+          >
+            返回商城
+          </Button>
+
+          <p style={{ textAlign: 'center', fontSize: 12, color: '#94a3b8', margin: '0' }}>
+            管理员：admin/admin123<br />
+            运营：operator/operator123
+          </p>
+
+        </Form>
+      </div>
     </div>
   );
 }

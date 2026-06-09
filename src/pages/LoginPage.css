@@ -1,0 +1,158 @@
+
+.login-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 160px);
+  padding: 24px 16px;
+  background: linear-gradient(135deg, #f6f7f9 0%, #fff2ef 100%);
+}
+
+.login-form-container {
+  width: 100%;
+  max-width: 380px;
+  background-color: #fff;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.10);
+  border-radius: 16px;
+  box-sizing: border-box;
+  padding: 32px 30px 24px;
+}
+
+.login-title {
+  text-align: center;
+  margin: 0 0 4px 0;
+  font-size: 22px;
+  font-weight: 700;
+  color: #1f2933;
+}
+
+.login-subtitle {
+  text-align: center;
+  margin: 0 0 24px 0;
+  font-size: 13px;
+  color: #94a3b8;
+}
+
+.login-tabs {
+  margin-bottom: 20px;
+}
+
+.login-tabs .ant-tabs-nav {
+  margin-bottom: 20px;
+}
+
+.login-tabs .ant-tabs-nav::before {
+  border-bottom: 1px solid #edf1f4;
+}
+
+.login-tabs .ant-tabs-tab {
+  font-size: 14px;
+  font-weight: 500;
+  padding: 8px 0;
+}
+
+.login-tabs .ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn {
+  color: #f04f3e;
+}
+
+.login-tabs .ant-tabs-ink-bar {
+  background: #f04f3e;
+}
+
+.login-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.login-form .ant-form-item {
+  margin-bottom: 0;
+}
+
+.login-form .ant-input,
+.login-form .ant-input-password {
+  border-radius: 8px;
+  border: 1px solid #e5eaf0;
+  padding: 8px 16px;
+  font-size: 14px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.login-form .ant-input:hover,
+.login-form .ant-input-password:hover {
+  border-color: #f04f3e40;
+}
+
+.login-form .ant-input:focus,
+.login-form .ant-input-password:focus,
+.login-form .ant-input-focused,
+.login-form .ant-input-password-focused {
+  border-color: #f04f3e;
+  box-shadow: 0 0 0 2px rgba(240, 79, 62, 0.10);
+}
+
+/* 去除浏览器自动填充的变色 */
+.login-form .ant-input:-webkit-autofill,
+.login-form .ant-input-password:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0 1000px #fff inset !important;
+  -webkit-text-fill-color: #1f2933 !important;
+  caret-color: #1f2933 !important;
+}
+
+.login-form .ant-input-password .ant-input {
+  border: none;
+  padding: 0;
+}
+
+/* 删掉了原来第 96-99 行的 .ant-input-password .ant-input */
+.login-form .ant-input-password .ant-input-password-icon {
+  color: #94a3b8;
+}
+
+
+.login-form-btn {
+  width: 100%;
+  padding: 10px 15px;
+  border-radius: 8px;
+  border: 0 !important;
+  outline: 0 !important;
+  background: #f04f3e;
+  color: white;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(240, 79, 62, 0.25);
+  transition: all 0.2s;
+}
+
+.login-form-btn:hover {
+  background: #e04435;
+  box-shadow: 0 6px 16px rgba(240, 79, 62, 0.35);
+}
+
+.login-form-btn:active {
+  box-shadow: none;
+  transform: scale(0.98);
+}
+
+.login-signup-label {
+  margin: 16px 0 0;
+  font-size: 12px;
+  color: #94a3b8;
+  text-align: center;
+}
+
+.login-signup-link {
+  margin-left: 2px;
+  font-size: 12px;
+  text-decoration: underline;
+  text-decoration-color: #f04f3e;
+  color: #f04f3e;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.login-signup-link:hover {
+  color: #e04435;
+}
