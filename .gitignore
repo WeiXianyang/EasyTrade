@@ -14,6 +14,7 @@ coverage/
 
 # WorkBuddy workspace
 .workbuddy/
+.superpowers/
 
 # Local environment files
 *.local
