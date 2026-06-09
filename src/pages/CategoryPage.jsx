@@ -1,7 +1,7 @@
 import { FilterOutlined } from '@ant-design/icons';
 import { Button, Checkbox, Col, Empty, Row, Select, Space } from 'antd';
 import { useMemo, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
 import ProductCard from '../components/shop/ProductCard.jsx';
 import { useAddToCart } from '../hooks/useAddToCart.js';
@@ -12,8 +12,9 @@ export default function CategoryPage() {
   const navigate = useNavigate();
   const handleAddCart = useAddToCart();
   const categories = categoryService.getCategories();
+  const params = useParams();
   const [searchParams] = useSearchParams();
-  const [categoryId, setCategoryId] = useState(() => searchParams.get('cat') || 'all');
+  const [categoryId, setCategoryId] = useState(() => params.categoryId || searchParams.get('cat') || 'all');
   const [sortMode, setSortMode] = useState('default');
   const [onlyDiscount, setOnlyDiscount] = useState(false);
   const [inStockOnly, setInStockOnly] = useState(false);
@@ -115,15 +116,17 @@ export default function CategoryPage() {
           <Empty description={emptyDescription}>
             <Space>
               <Button onClick={() => navigate('/')}>返回首页</Button>
-              <Button
-                onClick={() => {
-                  setSortMode('default');
-                  setOnlyDiscount(false);
-                  setInStockOnly(false);
-                }}
-              >
-                清除筛选
-              </Button>
+              {hasBaseProducts && (
+                <Button
+                  onClick={() => {
+                    setSortMode('default');
+                    setOnlyDiscount(false);
+                    setInStockOnly(false);
+                  }}
+                >
+                  清除筛选
+                </Button>
+              )}
             </Space>
           </Empty>
         </div>

@@ -123,3 +123,23 @@ test('category empty state distinguishes no products from no filter results', ()
   assert.match(categoryPage, /暂无在售商品，请稍后再来/);
   assert.match(categoryPage, /分类暂无在售商品/);
 });
+
+test('category page accepts path category id before query category id', () => {
+  const router = readSource('src/router.jsx');
+  const categoryPage = readSource('src/pages/CategoryPage.jsx');
+
+  assert.match(router, /path:\s*'category\/:categoryId'/);
+  assert.match(router, /path:\s*'category'/);
+  assert.match(categoryPage, /useParams/);
+  assert.match(categoryPage, /params\.categoryId\s*\|\|\s*searchParams\.get\('cat'\)\s*\|\|\s*'all'/);
+});
+
+test('category empty state only offers clear filters for filtered-out results', () => {
+  const categoryPage = readSource('src/pages/CategoryPage.jsx');
+
+  const emptySnippet = categoryPage.match(/<Empty description=\{emptyDescription\}>[\s\S]*?<\/Empty>/)?.[0] || '';
+
+  assert.match(emptySnippet, /\{hasBaseProducts && \(/);
+  assert.match(emptySnippet, /清除筛选/);
+  assert.match(emptySnippet, /返回首页/);
+});

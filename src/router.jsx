@@ -49,6 +49,7 @@ const router = createBrowserRouter([
         children: [
           { index: true, element: <Suspense fallback={PageLoader}><HomePage /></Suspense> },
           { path: 'category',         element: <Suspense fallback={PageLoader}><CategoryPage /></Suspense> },
+          { path: 'category/:categoryId', element: <Suspense fallback={PageLoader}><CategoryPage /></Suspense> },
           { path: 'login',            element: <Suspense fallback={PageLoader}><LoginPage /></Suspense> },
           { path: 'detail/:productId',element: <Suspense fallback={PageLoader}><ProductDetailPage /></Suspense> },
           {
