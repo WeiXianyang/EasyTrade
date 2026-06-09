@@ -69,6 +69,9 @@ export default function ShopLayout() {
 
   const cartItems = currentUser ? cartService.getCart(currentUser.id) : [];
   const cartSummary = currentUser ? cartService.getSelectedSummary(currentUser.id) : { count: 0, total: 0 };
+  const hasSelectedCartItems = cartItems.some((item) => item.selected);
+  const allCartItemsSelected = cartItems.length > 0 && cartItems.every((item) => item.selected);
+  const partiallySelectedCartItems = hasSelectedCartItems && !allCartItemsSelected;
   void localVersion; // 消费 localVersion，使上方两行在 forceUpdate 后重新执行
 
   const updateCart = (action) => {
@@ -190,19 +193,24 @@ export default function ShopLayout() {
           <div className="cart-drawer-list">
             <Flex justify="space-between" align="center" className="cart-drawer-select-bar">
               <Checkbox
-                checked={cartItems.length > 0 && cartItems.every((item) => item.selected)}
-                indeterminate={cartItems.some((item) => item.selected) && !cartItems.every((item) => item.selected)}
+                checked={allCartItemsSelected}
+                indeterminate={partiallySelectedCartItems}
                 onChange={(event) => updateCart(() => cartService.setAllSelected(currentUser.id, event.target.checked))}
               >
                 全选
               </Checkbox>
-              <Button size="small" onClick={() => updateCart(() => cartService.setAllSelected(currentUser.id, false))}>
+              <Button
+                size="small"
+                disabled={!hasSelectedCartItems}
+                onClick={() => updateCart(() => cartService.setAllSelected(currentUser.id, false))}
+              >
                 取消全选
               </Button>
             </Flex>
             {cartItems.map((item) => (
               <Flex key={item.productId} align="center" gap={12} className="cart-drawer-item">
                 <Checkbox
+                  aria-label={`选择 ${item.product.name}`}
                   checked={item.selected}
                   onChange={(event) => updateCart(() => cartService.setSelected(currentUser.id, item.productId, event.target.checked))}
                 />

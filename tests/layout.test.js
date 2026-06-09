@@ -40,6 +40,8 @@ test('cart drawer exposes checkbox selection controls', () => {
   assert.match(shopLayout, /setSelected/);
   assert.match(shopLayout, /setAllSelected/);
   assert.match(shopLayout, /取消全选/);
+  assert.match(shopLayout, /选择 \$\{item\.product\.name\}/);
+  assert.match(shopLayout, /disabled=\{!hasSelectedCartItems\}/);
 });
 
 test('mobile header keeps login controls in the top row', () => {
