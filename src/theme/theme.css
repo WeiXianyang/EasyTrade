@@ -179,6 +179,14 @@ a {
   line-height: 1;
 }
 
+.shop-floating-support {
+  position: fixed;
+  right: 24px;
+  bottom: calc(76px + env(safe-area-inset-bottom));
+  z-index: 45;
+  line-height: 1;
+}
+
 .shop-floating-cart {
   width: 52px !important;
   height: 52px !important;
@@ -696,6 +704,11 @@ a {
   }
 
   .shop-floating-cart-badge {
+    right: 12px;
+    bottom: calc(68px + env(safe-area-inset-bottom));
+  }
+
+  .shop-floating-support {
     right: 12px;
     bottom: calc(68px + env(safe-area-inset-bottom));
   }

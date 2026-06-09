@@ -15,8 +15,10 @@ import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useApp } from '../contexts/useApp.js';
 import cartService from '../services/cartService.js';
 import { formatCurrency } from '../utils/format.js';
-import './ShopBottomNav.css'; 
 import LogoutBtn from '../components/shop/LogoutBtn.jsx';
+import FloatingSupportBtn from '../components/shop/FloatingSupportBtn.jsx';
+import SupportDrawer from '../components/shop/SupportDrawer.jsx';
+import './ShopBottomNav.css';
 
 const navItems = [
   { key: '/', to: '/', icon: <HomeOutlined />, label: '首页' },
@@ -32,18 +34,11 @@ function selectedKey(pathname) {
   return '/';
 }
 
-function FloatingSupportBtn() {
-  return null;
-}
-
-function SupportDrawer() {
-  return null;
-}
-
 export default function ShopLayout() {
   const location = useLocation();
 
   const [headerHidden, setHeaderHidden] = useState(false);
+  const [supportOpen, setSupportOpen] = useState(false);
   useEffect(()=>{
     let lastScrollY = window.scrollY;
     const handleScroll = () => {
@@ -140,10 +135,10 @@ export default function ShopLayout() {
           </Link>
         ))}
       </nav>
-      <div className="shop-floating-support-slot">
-        <FloatingSupportBtn />
+      <div className="shop-floating-support">
+        <FloatingSupportBtn onClick={() => setSupportOpen(true)} />
       </div>
-      <SupportDrawer />
+      <SupportDrawer open={supportOpen} onClose={() => setSupportOpen(false)} />
       <Drawer
         title="购物车"
         open={cartDrawerOpen}

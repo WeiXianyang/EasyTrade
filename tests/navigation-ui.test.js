@@ -83,3 +83,18 @@ test('admin identity login hands off a password-free session to the admin entry'
   assert.match(adminLoginPage, /admin|operator/);
   assert.match(appProvider, /acceptAdminHandoff/);
 });
+
+test('smart support uses environment config and local product fallback', () => {
+  const chatService = readSource('src/services/chatService.js');
+  const supportDrawer = readSource('src/components/shop/SupportDrawer.jsx');
+  const envExample = readSource('.env.example');
+
+  assert.match(chatService, /VITE_CUSTOM_HOST/);
+  assert.match(chatService, /VITE_CUSTOM_KEY/);
+  assert.match(chatService, /VITE_CUSTOM_MODEL/);
+  assert.match(chatService, /recommendProducts/);
+  assert.match(supportDrawer, /商品推荐/);
+  assert.match(supportDrawer, /\/detail\//);
+  assert.match(envExample, /VITE_CUSTOM_HOST=/);
+  assert.doesNotMatch(envExample, /sk-/);
+});
