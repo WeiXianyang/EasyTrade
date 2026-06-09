@@ -143,6 +143,18 @@ test('auth service accepts password-free admin handoff sessions only for admin r
     () => authService.setCurrentAdmin({ id: 'u-demo', username: 'buyer', role: 'customer', name: '校园买手' }),
     /无效的后台身份/,
   );
+  assert.throws(
+    () => authService.setCurrentAdmin({ id: 'forged', username: 'forged', role: 'admin', name: 'Fake' }),
+    /无效的后台身份/,
+  );
+  assert.throws(
+    () => authService.setCurrentAdmin({ id: 'a-admin', username: 'operator', role: 'admin', name: 'Fake' }),
+    /无效的后台身份/,
+  );
+  assert.throws(
+    () => authService.setCurrentAdmin({ id: 'a-admin', username: 'admin', role: 'operator', name: 'Fake' }),
+    /无效的后台身份/,
+  );
 });
 
 test('auth service reuses valid cached sessions and clears stale cached users', () => {

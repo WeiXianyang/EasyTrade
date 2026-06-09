@@ -78,6 +78,7 @@ test('admin identity login hands off a password-free session to the admin entry'
   assert.doesNotMatch(handoffSnippet, /password/);
   assert.match(adminLoginPage, /useSearchParams/);
   assert.match(adminLoginPage, /handoff/);
+  assert.doesNotMatch(adminLoginPage, /decodeURIComponent\(handoff\)/);
   assert.match(adminLoginPage, /acceptAdminHandoff/);
   assert.match(adminLoginPage, /admin|operator/);
   assert.match(appProvider, /acceptAdminHandoff/);

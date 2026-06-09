@@ -103,12 +103,16 @@ export function createAuthService(storage = storageService) {
       if (!admin?.id || !admin?.username || !['admin', 'operator'].includes(admin.role)) {
         throw new Error('无效的后台身份');
       }
-      const safeAdmin = withoutPassword({
-        id: admin.id,
-        username: admin.username,
-        role: admin.role,
-        name: admin.name || admin.username,
-      });
+      const liveUser = getUsers().find((user) => (
+        user.id === admin.id
+        && user.username === admin.username
+        && user.role === admin.role
+        && ['admin', 'operator'].includes(user.role)
+      ));
+      if (!liveUser) {
+        throw new Error('无效的后台身份');
+      }
+      const safeAdmin = withoutPassword(liveUser);
       storage.write(storage.keys.currentAdmin, safeAdmin);
       return safeAdmin;
     },

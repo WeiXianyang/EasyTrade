@@ -18,7 +18,7 @@ export default function AdminLoginPage({ dashboardPath = '/admin', shopUrl = '/'
     }
 
     try {
-      const admin = JSON.parse(decodeURIComponent(handoff));
+      const admin = JSON.parse(handoff);
       if (!['admin', 'operator'].includes(admin.role)) {
         throw new Error('无效的后台身份');
       }
