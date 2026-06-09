@@ -1,4 +1,4 @@
-import { Badge, Button, Drawer, Empty, Flex, Image, InputNumber, Layout, Space, Tooltip, Typography } from 'antd';
+import { Badge, Button, Checkbox, Drawer, Empty, Flex, Image, InputNumber, Layout, Space, Tooltip, Typography } from 'antd';
 import { useEffect, useReducer, useState } from 'react';
 import {
   AppstoreOutlined,
@@ -188,8 +188,24 @@ export default function ShopLayout() {
           </Empty>
         ) : (
           <div className="cart-drawer-list">
+            <Flex justify="space-between" align="center" className="cart-drawer-select-bar">
+              <Checkbox
+                checked={cartItems.length > 0 && cartItems.every((item) => item.selected)}
+                indeterminate={cartItems.some((item) => item.selected) && !cartItems.every((item) => item.selected)}
+                onChange={(event) => updateCart(() => cartService.setAllSelected(currentUser.id, event.target.checked))}
+              >
+                全选
+              </Checkbox>
+              <Button size="small" onClick={() => updateCart(() => cartService.setAllSelected(currentUser.id, false))}>
+                取消全选
+              </Button>
+            </Flex>
             {cartItems.map((item) => (
               <Flex key={item.productId} align="center" gap={12} className="cart-drawer-item">
+                <Checkbox
+                  checked={item.selected}
+                  onChange={(event) => updateCart(() => cartService.setSelected(currentUser.id, item.productId, event.target.checked))}
+                />
                 <Image width={56} height={42} src={item.product.image} alt={item.product.name} style={{ objectFit: 'cover', borderRadius: 8 }} />
                 <Flex vertical flex={1} gap={4}>
                   <Typography.Text ellipsis>{item.product.name}</Typography.Text>

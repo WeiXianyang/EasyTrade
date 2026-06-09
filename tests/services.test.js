@@ -84,6 +84,23 @@ test('cart service merges quantities, selects items, and calculates totals', () 
   assert.equal(cartService.getSelectedSummary('u-demo').total, firstProduct.price * 3);
 });
 
+test('cart service supports select all, partial selection, and clear selection', () => {
+  const { productService, cartService } = createServices();
+  const [firstProduct, secondProduct] = productService.getVisibleProducts();
+
+  cartService.addItem('u-demo', firstProduct.id, 1);
+  cartService.addItem('u-demo', secondProduct.id, 2);
+  cartService.setAllSelected('u-demo', false);
+
+  assert.equal(cartService.getSelectedSummary('u-demo').count, 0);
+
+  cartService.setSelected('u-demo', secondProduct.id, true);
+  assert.equal(cartService.getSelectedSummary('u-demo').count, 2);
+
+  cartService.setAllSelected('u-demo', true);
+  assert.equal(cartService.getSelectedSummary('u-demo').count, 3);
+});
+
 test('order service creates, pays, and ships an order from cart items', () => {
   const { productService, cartService, orderService } = createServices();
   const [product] = productService.getVisibleProducts();

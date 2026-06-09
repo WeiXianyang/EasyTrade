@@ -35,6 +35,13 @@ test('shop bottom navigation keeps the required course demo order', () => {
   assert.ok(categoryIndex < meIndex);
 });
 
+test('cart drawer exposes checkbox selection controls', () => {
+  assert.match(shopLayout, /Checkbox/);
+  assert.match(shopLayout, /setSelected/);
+  assert.match(shopLayout, /setAllSelected/);
+  assert.match(shopLayout, /取消全选/);
+});
+
 test('mobile header keeps login controls in the top row', () => {
   const mobileHeaderRule = themeCss.match(/@media \(max-width: 760px\)[\s\S]*?\.shop-header-main\s*{([^}]*)}/)?.[1] || '';
 

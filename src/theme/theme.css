@@ -184,6 +184,12 @@ a {
   padding-inline: 0;
 }
 
+.cart-drawer-select-bar {
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--color-border-light);
+}
+
 .cart-drawer-footer {
   display: flex;
   gap: 12px;

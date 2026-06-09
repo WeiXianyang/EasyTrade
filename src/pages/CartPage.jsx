@@ -96,7 +96,7 @@ export default function CartPage() {
       <div className="section-head">
         <div>
           <Typography.Title level={2}>购物车</Typography.Title>
-          <Typography.Text className="muted">支持数量修改、删除、选择结算，刷新后购物车不丢失。</Typography.Text>
+          <Typography.Text className="muted">勾选需要购买的商品，可全选、部分选择或取消全选。</Typography.Text>
         </div>
         <Button onClick={() => navigate('/category')}>继续购物</Button>
       </div>
@@ -133,7 +133,7 @@ export default function CartPage() {
               reload();
             }}
           >
-            取消选择
+            取消全选
           </Button>
         </Space>
         <Space>
