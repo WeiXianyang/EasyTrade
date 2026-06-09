@@ -14,16 +14,22 @@ export default function CategoryPage() {
   const categories = categoryService.getCategories();
   const params = useParams();
   const [searchParams] = useSearchParams();
-  const [categoryId, setCategoryId] = useState(() => params.categoryId || searchParams.get('cat') || 'all');
+  const routeCategoryId = params.categoryId || searchParams.get('cat') || 'all';
+  const isUnknownCategory =
+    routeCategoryId !== 'all' && !categories.some((category) => category.id === routeCategoryId);
+  const categoryId = routeCategoryId;
   const [sortMode, setSortMode] = useState('default');
   const [onlyDiscount, setOnlyDiscount] = useState(false);
   const [inStockOnly, setInStockOnly] = useState(false);
   const baseProducts = useMemo(
-    () =>
-      productService.getVisibleProducts({
+    () => {
+      if (isUnknownCategory) return [];
+
+      return productService.getVisibleProducts({
         categoryId: categoryId === 'all' ? undefined : categoryId,
-      }),
-    [categoryId],
+      });
+    },
+    [categoryId, isUnknownCategory],
   );
   const products = useMemo(() => {
     const filtered = baseProducts.filter((product) => {
@@ -46,10 +52,13 @@ export default function CategoryPage() {
   }, [baseProducts, inStockOnly, onlyDiscount, sortMode]);
 
   const currentCategory = categoryId === 'all' ? null : categories.find((c) => c.id === categoryId);
+  const categoryTitle = isUnknownCategory ? '未知分类' : currentCategory ? currentCategory.name : '全部商品';
   const hasBaseProducts = baseProducts.length > 0;
   const emptyDescription = hasBaseProducts
     ? '当前筛选暂无结果'
-    : categoryId === 'all'
+    : isUnknownCategory
+      ? '未找到该分类'
+      : categoryId === 'all'
       ? '暂无在售商品，请稍后再来'
       : `「${currentCategory?.name}」分类暂无在售商品`;
 
@@ -58,20 +67,22 @@ export default function CategoryPage() {
       {/* 横向滑动分类标签栏 */}
       <div className = 'category-tabs-wrap'>
         <div className = 'category-tabs'>
-          <div
+          <button
+            type="button"
             className={`category-tab${categoryId === 'all' ? ' active' : ''}`}
-            onClick={() => setCategoryId('all')}
+            onClick={() => navigate('/category')}
           >
             所有商品
-          </div>
+          </button>
           {categories.map((cat)=>(
-            <div
+            <button
+              type="button"
               key={cat.id}
               className={`category-tab${categoryId === cat.id ? ' active' : ''}`}
-              onClick={() => setCategoryId((prev) => (prev === cat.id ? 'all' : cat.id))}
+              onClick={() => navigate(`/category/${cat.id}`)}
             >
               {cat.name}
-            </div>
+            </button>
           ))}
         </div>
       </div>
@@ -80,7 +91,7 @@ export default function CategoryPage() {
       <div className="category-info">
         <Space>
           <span className="category-info-title">
-            {currentCategory ? currentCategory.name : '全部商品'}
+            {categoryTitle}
           </span>
           <span className="category-info-count">
             共 {products.length} 件
