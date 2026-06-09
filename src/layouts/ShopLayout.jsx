@@ -2,11 +2,11 @@ import { Badge, Button, Drawer, Empty, Flex, Image, InputNumber, Layout, Space, 
 import { useEffect, useReducer, useState } from 'react';
 import {
   AppstoreOutlined,
-  DashboardOutlined,
   DeleteOutlined,
   HomeOutlined,
   LoginOutlined,
   MoonOutlined,
+  ShoppingCartOutlined,
   SunOutlined,
   UserOutlined,
 } from '@ant-design/icons';
@@ -15,23 +15,29 @@ import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useApp } from '../contexts/useApp.js';
 import cartService from '../services/cartService.js';
 import { formatCurrency } from '../utils/format.js';
-import FloatingCartBtn from '../components/shop/FloatingCartBtn.jsx';
 import './ShopBottomNav.css'; 
 import LogoutBtn from '../components/shop/LogoutBtn.jsx';
 
 const navItems = [
   { key: '/', to: '/', icon: <HomeOutlined />, label: '首页' },
   { key: '/category', to: '/category', icon: <AppstoreOutlined />, label: '分类' },
+  { key: '/cart', to: '/cart', icon: <ShoppingCartOutlined />, label: '购物车', badge: true },
   { key: '/me', to: '/me', icon: <UserOutlined />, label: '我的' },
-  { key: '/admin/login', to: '/admin/login', icon: <DashboardOutlined />, label: '后台' },
 ];
 
 function selectedKey(pathname) {
-  if (pathname.startsWith('/admin')) return '/admin/login';
   if (pathname.startsWith('/category')) return '/category';
-  if (pathname.startsWith('/cart') || pathname.startsWith('/checkout') || pathname.startsWith('/pay')) return '';
+  if (pathname.startsWith('/cart') || pathname.startsWith('/checkout') || pathname.startsWith('/pay')) return '/cart';
   if (pathname.startsWith('/me') || pathname.startsWith('/orders')) return '/me';
   return '/';
+}
+
+function FloatingSupportBtn() {
+  return null;
+}
+
+function SupportDrawer() {
+  return null;
 }
 
 export default function ShopLayout() {
@@ -54,7 +60,7 @@ export default function ShopLayout() {
     
   }, []);
   const navigate = useNavigate();
-  const { cartCount, cartDrawerOpen, closeCart, currentUser, logoutUser, openCart: openCartDrawer, refresh, theme, toggleTheme } = useApp();
+  const { cartCount, cartDrawerOpen, closeCart, currentUser, logoutUser, refresh, theme, toggleTheme } = useApp();
   const activeKey = selectedKey(location.pathname);
 
   // 本地 state 持有购物车快照，Drawer 打开时强制刷新
@@ -124,13 +130,20 @@ export default function ShopLayout() {
         {navItems.map((item) => (
           <Link key={item.key} className={`shop-bottom-nav-item${activeKey === item.key ? ' active' : ''}`} to={item.to}>
             {item.icon}
-            <span>{item.label}</span>
+            {item.badge ? (
+              <Badge count={cartCount} size="small">
+                <span>{item.label}</span>
+              </Badge>
+            ) : (
+              <span>{item.label}</span>
+            )}
           </Link>
         ))}
       </nav>
-      <Badge count={cartCount} size="small" className="shop-floating-cart-badge">
-        <FloatingCartBtn onClick={openCartDrawer} />
-      </Badge>
+      <div className="shop-floating-support-slot">
+        <FloatingSupportBtn />
+      </div>
+      <SupportDrawer />
       <Drawer
         title="购物车"
         open={cartDrawerOpen}

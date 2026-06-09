@@ -52,3 +52,13 @@ test('shopping flow mutations are visible in mock api logs', () => {
   assert.match(pages, /\/orders/);
   assert.match(pages, /\/pay/);
 });
+
+test('login page lets course demo users choose customer or administrator identity', () => {
+  const loginPage = readSource('src/pages/LoginPage.jsx');
+
+  assert.match(loginPage, /用户/);
+  assert.match(loginPage, /管理员/);
+  assert.match(loginPage, /loginUser/);
+  assert.match(loginPage, /loginAdmin/);
+  assert.match(loginPage, /admin\/admin123|admin123/);
+});

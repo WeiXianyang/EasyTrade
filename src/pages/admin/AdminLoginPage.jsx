@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../contexts/useApp.js';
 import '../LoginPage.css';          
 
-export default function AdminLoginPage() {
+export default function AdminLoginPage({ dashboardPath = '/admin', shopUrl = '/' }) {
   const navigate = useNavigate();
   const { message } = App.useApp();
   const { loginAdmin } = useApp();
@@ -13,7 +13,7 @@ export default function AdminLoginPage() {
     try {
       const admin = loginAdmin(values.username, values.password);
       message.success(`欢迎进入后台，${admin.name}`);
-      navigate('/admin');
+      navigate(dashboardPath);
     } catch (error) {
       message.error(error.message);
     }
@@ -50,7 +50,9 @@ export default function AdminLoginPage() {
           <Button
             block
             style={{ borderRadius: 8 }}
-            onClick={() => navigate('/')}
+            onClick={() => {
+              window.location.href = shopUrl;
+            }}
           >
             返回商城
           </Button>

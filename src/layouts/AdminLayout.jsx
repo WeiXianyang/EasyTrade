@@ -16,22 +16,30 @@ import AdminOpsTools from '../components/admin/AdminOpsTools.jsx';
 import { useApp } from '../contexts/useApp.js';
 import { canAccess, getRoleLabel } from '../services/permissionService.js';
 
-const allItems = [
-  { key: '/admin', icon: <DashboardOutlined />, label: '概览', moduleName: 'dashboard' },
-  { key: '/admin/products', icon: <ProductOutlined />, label: '商品管理', moduleName: 'products' },
-  { key: '/admin/categories', icon: <AppstoreOutlined />, label: '分类管理', moduleName: 'categories' },
-  { key: '/admin/orders', icon: <ShoppingOutlined />, label: '订单管理', moduleName: 'orders' },
-  { key: '/admin/roles', icon: <TeamOutlined />, label: '权限管理', moduleName: 'roles' },
-];
+function adminPath(basePath, path = '') {
+  const prefix = basePath || '';
+  return `${prefix}${path}` || '/dashboard';
+}
 
-export default function AdminLayout() {
+function createAdminItems(basePath) {
+  return [
+    { key: adminPath(basePath, basePath ? '' : '/dashboard'), icon: <DashboardOutlined />, label: '概览', moduleName: 'dashboard' },
+    { key: adminPath(basePath, '/products'), icon: <ProductOutlined />, label: '商品管理', moduleName: 'products' },
+    { key: adminPath(basePath, '/categories'), icon: <AppstoreOutlined />, label: '分类管理', moduleName: 'categories' },
+    { key: adminPath(basePath, '/orders'), icon: <ShoppingOutlined />, label: '订单管理', moduleName: 'orders' },
+    { key: adminPath(basePath, '/roles'), icon: <TeamOutlined />, label: '权限管理', moduleName: 'roles' },
+  ];
+}
+
+export default function AdminLayout({ basePath = '/admin', shopUrl = '/' }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { currentAdmin, logoutAdmin, theme, toggleTheme } = useApp();
+  const allItems = createAdminItems(basePath);
   const items = allItems
     .filter((item) => canAccess(currentAdmin.role, item.moduleName))
     .map((item) => ({ key: item.key, icon: item.icon, label: item.label }));
-  const selectedKey = [...items].reverse().find((item) => location.pathname === item.key)?.key || '/admin';
+  const selectedKey = [...items].reverse().find((item) => location.pathname === item.key)?.key || allItems[0].key;
 
   return (
     <Layout className="admin-layout">
@@ -62,12 +70,14 @@ export default function AdminLayout() {
             </Tooltip>
             <span className="admin-user-name">{currentAdmin.name}</span>
             <span className="muted admin-role-name">{getRoleLabel(currentAdmin.role)}</span>
-            <Button icon={<ShopOutlined />} onClick={() => navigate('/')}>
+            <Button icon={<ShopOutlined />} onClick={() => {
+              window.location.href = shopUrl;
+            }}>
               返回商城
             </Button>
             <Button icon={<LogoutOutlined />} onClick={() => {
               logoutAdmin();
-              navigate('/admin/login');
+              navigate(basePath ? '/admin/login' : '/login');
             }}>
               退出后台
             </Button>

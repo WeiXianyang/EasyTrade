@@ -46,3 +46,16 @@ test('gitattributes normalizes source files and protects binary artifacts', () =
   assert.match(gitattributes, /\*\.zip binary/);
   assert.match(gitattributes, /\*\.pdf binary/);
 });
+
+test('project exposes separate shop and admin browser entries for course demo', () => {
+  const packageJson = readProjectFile('package.json');
+  const viteConfig = readProjectFile('vite.config.js');
+  const adminHtml = readProjectFile('admin.html');
+  const adminMain = readProjectFile('src/admin-main.jsx');
+
+  assert.match(packageJson, /"dev:shop"/);
+  assert.match(packageJson, /"dev:admin"/);
+  assert.match(viteConfig, /admin\.html/);
+  assert.match(adminHtml, /src\/admin-main\.jsx/);
+  assert.match(adminMain, /admin-router/);
+});

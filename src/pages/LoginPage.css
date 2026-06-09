@@ -59,6 +59,18 @@
   background: #f04f3e;
 }
 
+.login-identity-switch {
+  margin-bottom: 18px;
+}
+
+.login-demo-account {
+  margin: 0;
+  color: #94a3b8;
+  font-size: 12px;
+  line-height: 1.7;
+  text-align: center;
+}
+
 .login-form {
   width: 100%;
   display: flex;

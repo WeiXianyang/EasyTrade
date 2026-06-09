@@ -1,7 +1,10 @@
 import { defineConfig } from 'vite'
 import react, { reactCompilerPreset } from '@vitejs/plugin-react'
 import babel from '@rolldown/plugin-babel'
+import { dirname, resolve } from 'node:path'
 import { fileURLToPath, URL } from 'node:url'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -45,6 +48,10 @@ export default defineConfig({
   build: {
     // 开启代码分割，配合 React.lazy 实现路由级按需加载
     rollupOptions: {
+      input: {
+        shop: resolve(__dirname, 'index.html'),
+        admin: resolve(__dirname, 'admin.html'),
+      },
       output: {
         // manualChunks 使用函数形式兼容 rolldown
         manualChunks(id) {
@@ -59,4 +66,3 @@ export default defineConfig({
     },
   },
 })
-
