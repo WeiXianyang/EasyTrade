@@ -3,7 +3,8 @@ import productService from './productService.js';
 const DEFAULT_MODEL = 'gpt-4o-mini';
 
 function envValue(key) {
-  return (import.meta.env?.[key] || '').trim();
+  const testEnvValue = globalThis.__EASYTRADE_CHAT_ENV__?.[key];
+  return String(testEnvValue ?? import.meta.env?.[key] ?? '').trim();
 }
 
 function normalizeText(value) {
