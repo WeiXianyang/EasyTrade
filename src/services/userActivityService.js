@@ -6,8 +6,49 @@ function byNewest(left, right) {
   return String(right.createdAt || right.viewedAt || '').localeCompare(String(left.createdAt || left.viewedAt || ''));
 }
 
+function isNonEmptyString(value) {
+  return typeof value === 'string' && value.trim().length > 0;
+}
+
 function takeLimit(items, limit) {
   return Number.isFinite(limit) ? items.slice(0, limit) : items;
+}
+
+function dedupeByNewest(items, getKey) {
+  const seen = new Set();
+  return items
+    .sort(byNewest)
+    .filter((item) => {
+      const key = getKey(item);
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+}
+
+function normalizeFavorites(items) {
+  return dedupeByNewest(
+    items.filter((item) => isNonEmptyString(item?.userId) && isNonEmptyString(item?.productId)),
+    (item) => `${item.userId}:${item.productId}`,
+  );
+}
+
+function normalizeFollows(items) {
+  return dedupeByNewest(
+    items.filter((item) => (
+      isNonEmptyString(item?.userId) &&
+      item.type === 'category' &&
+      isNonEmptyString(item?.categoryId)
+    )),
+    (item) => `${item.userId}:${item.type}:${item.categoryId}`,
+  );
+}
+
+function normalizeFootprints(items) {
+  return dedupeByNewest(
+    items.filter((item) => isNonEmptyString(item?.userId) && isNonEmptyString(item?.productId)),
+    (item) => `${item.userId}:${item.productId}`,
+  );
 }
 
 export function createUserActivityService(
@@ -24,8 +65,9 @@ export function createUserActivityService(
   }
 
   function getFavorites(userId, limit = Infinity) {
+    if (!isNonEmptyString(userId)) return [];
     return takeLimit(
-      readList(storage.keys.favorites)
+      normalizeFavorites(readList(storage.keys.favorites))
         .filter((item) => item.userId === userId)
         .sort(byNewest),
       limit,
@@ -33,8 +75,9 @@ export function createUserActivityService(
   }
 
   function getCategoryFollows(userId, limit = Infinity) {
+    if (!isNonEmptyString(userId)) return [];
     return takeLimit(
-      readList(storage.keys.follows)
+      normalizeFollows(readList(storage.keys.follows))
         .filter((item) => item.userId === userId && item.type === 'category')
         .sort(byNewest),
       limit,
@@ -42,8 +85,9 @@ export function createUserActivityService(
   }
 
   function getFootprints(userId, limit = Infinity) {
+    if (!isNonEmptyString(userId)) return [];
     return takeLimit(
-      readList(storage.keys.footprints)
+      normalizeFootprints(readList(storage.keys.footprints))
         .filter((item) => item.userId === userId)
         .sort((left, right) => String(right.viewedAt || '').localeCompare(String(left.viewedAt || ''))),
       limit,
@@ -61,52 +105,72 @@ export function createUserActivityService(
       return getCategoryFollows(userId, limit).map((item) => item.categoryId);
     },
     isFavorite(userId, productId) {
-      return readList(storage.keys.favorites).some((item) => item.userId === userId && item.productId === productId);
+      if (!isNonEmptyString(userId) || !isNonEmptyString(productId)) return false;
+      return normalizeFavorites(readList(storage.keys.favorites)).some(
+        (item) => item.userId === userId && item.productId === productId,
+      );
     },
     isFollowingCategory(userId, categoryId) {
-      return readList(storage.keys.follows).some(
+      if (!isNonEmptyString(userId) || !isNonEmptyString(categoryId)) return false;
+      return normalizeFollows(readList(storage.keys.follows)).some(
         (item) => item.userId === userId && item.type === 'category' && item.categoryId === categoryId,
       );
     },
     toggleFavorite(userId, productId) {
+      if (!isNonEmptyString(userId) || !isNonEmptyString(productId)) {
+        return { favorited: false, favorites: getFavorites(userId) };
+      }
       const favorites = readList(storage.keys.favorites);
-      const existingIndex = favorites.findIndex((item) => item.userId === userId && item.productId === productId);
-      if (existingIndex >= 0) {
-        const nextFavorites = favorites.filter((_, index) => index !== existingIndex);
-        writeList(storage.keys.favorites, nextFavorites);
+      const hasExisting = normalizeFavorites(favorites).some((item) => item.userId === userId && item.productId === productId);
+      if (hasExisting) {
+        const nextFavorites = favorites.filter((item) => !(item?.userId === userId && item?.productId === productId));
+        writeList(storage.keys.favorites, normalizeFavorites(nextFavorites));
         return { favorited: false, favorites: getFavorites(userId) };
       }
 
-      writeList(storage.keys.favorites, [
+      writeList(storage.keys.favorites, normalizeFavorites([
         { userId, productId, createdAt: now() },
         ...favorites,
-      ]);
+      ]));
       return { favorited: true, favorites: getFavorites(userId) };
     },
     toggleCategoryFollow(userId, categoryId) {
+      if (!isNonEmptyString(userId) || !isNonEmptyString(categoryId)) {
+        return { following: false, follows: getCategoryFollows(userId) };
+      }
       const follows = readList(storage.keys.follows);
-      const existingIndex = follows.findIndex(
+      const hasExisting = normalizeFollows(follows).some(
         (item) => item.userId === userId && item.type === 'category' && item.categoryId === categoryId,
       );
-      if (existingIndex >= 0) {
-        const nextFollows = follows.filter((_, index) => index !== existingIndex);
-        writeList(storage.keys.follows, nextFollows);
+      if (hasExisting) {
+        const nextFollows = follows.filter(
+          (item) => !(item?.userId === userId && item?.type === 'category' && item?.categoryId === categoryId),
+        );
+        writeList(storage.keys.follows, normalizeFollows(nextFollows));
         return { following: false, follows: getCategoryFollows(userId) };
       }
 
-      writeList(storage.keys.follows, [
+      writeList(storage.keys.follows, normalizeFollows([
         { userId, type: 'category', categoryId, createdAt: now() },
         ...follows,
-      ]);
+      ]));
       return { following: true, follows: getCategoryFollows(userId) };
     },
     recordFootprint(userId, productId) {
-      const footprints = readList(storage.keys.footprints);
-      const nextFootprints = [
+      if (!isNonEmptyString(userId) || !isNonEmptyString(productId)) {
+        return getFootprints(userId);
+      }
+      const footprints = normalizeFootprints(readList(storage.keys.footprints));
+      const currentUserFootprints = footprints.filter((item) => item.userId === userId && item.productId !== productId);
+      const otherUserFootprints = footprints.filter((item) => item.userId !== userId);
+      const nextCurrentUserFootprints = takeLimit([
         { userId, productId, viewedAt: now() },
-        ...footprints.filter((item) => !(item.userId === userId && item.productId === productId)),
-      ].slice(0, footprintLimit);
-      writeList(storage.keys.footprints, nextFootprints);
+        ...currentUserFootprints,
+      ], footprintLimit);
+      writeList(storage.keys.footprints, normalizeFootprints([
+        ...nextCurrentUserFootprints,
+        ...otherUserFootprints,
+      ]));
       return getFootprints(userId);
     },
   };

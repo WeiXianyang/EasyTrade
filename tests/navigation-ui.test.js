@@ -238,11 +238,27 @@ test('product detail page records footprints and exposes a persistent favorite t
 
   assert.match(productDetailPage, /userActivityService/);
   assert.match(productDetailPage, /useEffect/);
-  assert.match(productDetailPage, /recordFootprint\(currentUser\.id,\s*product\.id\)/);
-  assert.match(productDetailPage, /isFavorite\(currentUser\.id,\s*product\.id\)/);
-  assert.match(productDetailPage, /toggleFavorite\(currentUser\.id,\s*product\.id\)/);
+  assert.match(productDetailPage, /currentUserId/);
+  assert.match(productDetailPage, /recordFootprint\(currentUserId,\s*productId\)/);
+  assert.match(productDetailPage, /isFavorite\(currentUserId,\s*productId\)/);
+  assert.match(productDetailPage, /toggleFavorite\(currentUserId,\s*productId\)/);
   assert.match(productDetailPage, /已收藏/);
   assert.match(productDetailPage, /收藏/);
+});
+
+test('product detail footprint effect uses stable primitive dependencies without syncing favorite state', () => {
+  const productDetailPage = readSource('src/pages/ProductDetailPage.jsx');
+  const footprintEffectMatch = productDetailPage.match(/useEffect\(\(\) => \{[\s\S]*?recordFootprint[\s\S]*?\}, \[([^\]]*)\]\);/);
+
+  assert.ok(footprintEffectMatch, 'footprint effect should be present');
+  const effectSource = footprintEffectMatch[0];
+  const dependencies = footprintEffectMatch[1];
+
+  assert.match(dependencies, /currentUserId/);
+  assert.match(dependencies, /productId/);
+  assert.doesNotMatch(dependencies, /(^|,\s*)product(\s*,|$)/);
+  assert.doesNotMatch(dependencies, /(^|,\s*)currentUser(\s*,|$)/);
+  assert.doesNotMatch(effectSource, /setIsFavorite/);
 });
 
 test('me page shows favorite, follow, and footprint windows with product and category navigation', () => {

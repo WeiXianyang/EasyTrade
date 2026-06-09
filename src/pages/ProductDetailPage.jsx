@@ -17,18 +17,17 @@ export default function ProductDetailPage() {
   const { message } = App.useApp();
   const { currentUser, openCart, refresh } = useApp();
   const [quantity, setQuantity] = useState(1);
+  const currentUserId = currentUser?.id || '';
   const product = productService.getProductById(productId);
   const category = product ? categoryService.getCategoryById(product.categoryId) : null;
+  const productExists = Boolean(product);
   const canBuy = product ? product.status === 'on' && product.stock > 0 : false;
-  const [isFavorite, setIsFavorite] = useState(() => (
-    currentUser && product ? userActivityService.isFavorite(currentUser.id, product.id) : false
-  ));
+  const isFavorite = userActivityService.isFavorite(currentUserId, productId);
 
   useEffect(() => {
-    if (!currentUser || !product) return;
-    userActivityService.recordFootprint(currentUser.id, product.id);
-    setIsFavorite(userActivityService.isFavorite(currentUser.id, product.id));
-  }, [currentUser, product]);
+    if (!currentUserId || !productId || !productExists) return;
+    userActivityService.recordFootprint(currentUserId, productId);
+  }, [currentUserId, productId, productExists]);
 
   const ensureLogin = useCallback(() => {
     if (!currentUser) {
@@ -65,11 +64,10 @@ export default function ProductDetailPage() {
   const toggleFavorite = useCallback(() => {
     if (!product) return;
     if (!ensureLogin()) return;
-    const result = userActivityService.toggleFavorite(currentUser.id, product.id);
-    setIsFavorite(result.favorited);
+    const result = userActivityService.toggleFavorite(currentUserId, productId);
     refresh();
     message.success(result.favorited ? '已加入收藏' : '已取消收藏');
-  }, [currentUser, ensureLogin, message, product, refresh]);
+  }, [currentUserId, ensureLogin, message, product, productId, refresh]);
 
   if (!product) {
     return <Empty description="商品不存在" />;
