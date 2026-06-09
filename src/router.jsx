@@ -1,10 +1,10 @@
 /* eslint-disable react-refresh/only-export-components */
 import { Suspense, lazy } from 'react';
-import { Spin } from 'antd';
 import { createBrowserRouter } from 'react-router-dom';
 
 import App from './App';
 import { RequireAdmin, RequireUser } from './components/RouteGuards.jsx';
+import PageSkeleton from './components/shop/PageSkeleton.jsx';
 
 // ─── 懒加载所有页面组件（代码分割，减小首屏包体积）─────────────────────────────
 const AdminLayout        = lazy(() => import('./layouts/AdminLayout.jsx'));
@@ -28,11 +28,7 @@ const PayPage            = lazy(() => import('./pages/PayPage.jsx'));
 const ProductDetailPage  = lazy(() => import('./pages/ProductDetailPage.jsx'));
 
 /** 路由级全局 Loading 占位 */
-const PageLoader = (
-  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
-    <Spin size="large" description="加载中..." />
-  </div>
-);
+const PageLoader = <PageSkeleton />;
 
 const router = createBrowserRouter([
   {

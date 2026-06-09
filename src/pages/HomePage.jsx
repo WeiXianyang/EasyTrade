@@ -8,6 +8,7 @@ import { useAddToCart } from '../hooks/useAddToCart.js';
 import categoryService from '../services/categoryService.js';
 import productService from '../services/productService.js';
 import FancySearch from '../components/shop/FancySearch.jsx';
+import { formatCurrency } from '../utils/format.js';
 
 const searchPlaceholders = ['搜索手机、咖啡、台灯、跑鞋', '搜索数码好物', '搜索运动装备', '搜索精选食品'];
 
@@ -36,6 +37,10 @@ export default function HomePage() {
   const categories = categoryService.getCategories();
   const products = useMemo(() => productService.getVisibleProducts({ keyword }), [keyword]);
   const hotProducts = keyword ? products : productService.getHotProducts(4);
+  const flashSaleProducts = useMemo(() => products
+    .filter((product) => product.originalPrice > product.price)
+    .sort((a, b) => (b.originalPrice - b.price) - (a.originalPrice - a.price))
+    .slice(0, 3), [products]);
 
   return (
     <>
@@ -70,8 +75,6 @@ export default function HomePage() {
           </div>
         </Carousel>
 
-      
-      
         {!keyword && (
           <div className="quick-categories">
             {categories.map((cat) => (
@@ -84,6 +87,49 @@ export default function HomePage() {
               </div>
             ))}
           </div>
+        )}
+        {flashSaleProducts.length > 0 && (
+          <section className="flash-sale-section">
+            <div className="section-head flash-sale-head">
+              <div>
+                <Typography.Title level={2}>
+                  <FireOutlined /> 限时促销
+                </Typography.Title>
+              </div>
+              <span className="flash-sale-chip">秒杀价</span>
+            </div>
+            <Row gutter={[16, 16]}>
+              {flashSaleProducts.map((product) => (
+                <Col key={product.id} xs={24} md={8}>
+                  <article className="flash-sale-card" onClick={() => navigate(`/detail/${product.id}`)}>
+                    <div className="flash-sale-image-wrap">
+                      <img src={product.image} alt={product.name} />
+                      <span className="flash-price-badge">秒杀价</span>
+                    </div>
+                    <div className="flash-sale-info">
+                      <Typography.Text className="flash-sale-name" ellipsis title={product.name}>
+                        {product.name}
+                      </Typography.Text>
+                      <div className="flash-sale-price-line">
+                        <span className="flash-sale-price">{formatCurrency(product.price)}</span>
+                        <span className="original-price">{formatCurrency(product.originalPrice)}</span>
+                      </div>
+                      <Button
+                        type="primary"
+                        icon={<ShoppingCartOutlined />}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          handleAddCart(product);
+                        }}
+                      >
+                        加入购物车
+                      </Button>
+                    </div>
+                  </article>
+                </Col>
+              ))}
+            </Row>
+          </section>
         )}
         <div>
           <div className="section-head">

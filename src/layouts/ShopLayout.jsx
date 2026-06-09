@@ -98,6 +98,7 @@ export default function ShopLayout() {
               {/* 主题切换按钮 */}
               <Tooltip title={theme === 'light' ? '切换暗色' : '切换亮色'}>
                 <Button
+                  className="theme-toggle-btn"
                   type="text"
                   icon={theme === 'light' ? <MoonOutlined /> : <SunOutlined />}
                   onClick={toggleTheme}

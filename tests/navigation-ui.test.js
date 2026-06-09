@@ -145,3 +145,40 @@ test('category empty state only offers clear filters for filtered-out results', 
   assert.match(emptySnippet, /清除筛选/);
   assert.match(emptySnippet, /返回首页/);
 });
+
+test('lazy route fallback uses a storefront page skeleton instead of a plain spinner', () => {
+  const router = readSource('src/router.jsx');
+  const pageSkeleton = readSource('src/components/shop/PageSkeleton.jsx');
+
+  assert.match(router, /PageSkeleton/);
+  assert.match(router, /const PageLoader\s*=\s*<PageSkeleton\s*\/>/);
+  assert.doesNotMatch(router, /Spin/);
+  assert.match(pageSkeleton, /page-skeleton/);
+  assert.match(pageSkeleton, /page-skeleton-hero/);
+  assert.match(pageSkeleton, /page-skeleton-card/);
+});
+
+test('home page exposes a discounted flash sale section with floating seckill labels', () => {
+  const homePage = readSource('src/pages/HomePage.jsx');
+  const themeCss = readSource('src/theme/theme.css');
+
+  assert.match(homePage, /flashSaleProducts/);
+  assert.match(homePage, /originalPrice\s*>\s*product\.price/);
+  assert.match(homePage, /flash-sale-section/);
+  assert.match(homePage, /秒杀价/);
+  assert.match(themeCss, /@keyframes\s+seckillFloat[\s\S]*translateY\(-?\d+px\)[\s\S]*translateY\(-?\d+px\)/);
+  assert.match(themeCss, /\.flash-price-badge[\s\S]*animation:\s*seckillFloat/);
+});
+
+test('theme switch buttons have a stable transform animation class in shop and admin layouts', () => {
+  const shopLayout = readSource('src/layouts/ShopLayout.jsx');
+  const adminLayout = readSource('src/layouts/AdminLayout.jsx');
+  const themeCss = readSource('src/theme/theme.css');
+
+  assert.match(shopLayout, /className="theme-toggle-btn"/);
+  assert.match(adminLayout, /className="theme-toggle-btn"/);
+  assert.match(themeCss, /\.theme-toggle-btn[\s\S]*transition:[^;]*transform/);
+  assert.match(themeCss, /\.theme-toggle-btn:hover[\s\S]*transform:/);
+  assert.match(themeCss, /\.theme-toggle-btn:active[\s\S]*transform:/);
+  assert.match(themeCss, /body[\s\S]*transition:[^;]*background[^;]*color/);
+});
