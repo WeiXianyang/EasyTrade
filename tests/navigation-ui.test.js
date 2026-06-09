@@ -113,3 +113,13 @@ test('category page exposes price, sales, discount, and stock filters', () => {
   assert.match(categoryPage, /onlyDiscount/);
   assert.match(categoryPage, /inStockOnly/);
 });
+
+test('category empty state distinguishes no products from no filter results', () => {
+  const categoryPage = readSource('src/pages/CategoryPage.jsx');
+
+  assert.match(categoryPage, /baseProducts/);
+  assert.match(categoryPage, /hasBaseProducts/);
+  assert.match(categoryPage, /当前筛选暂无结果/);
+  assert.match(categoryPage, /暂无在售商品，请稍后再来/);
+  assert.match(categoryPage, /分类暂无在售商品/);
+});

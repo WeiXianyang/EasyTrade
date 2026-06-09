@@ -17,11 +17,14 @@ export default function CategoryPage() {
   const [sortMode, setSortMode] = useState('default');
   const [onlyDiscount, setOnlyDiscount] = useState(false);
   const [inStockOnly, setInStockOnly] = useState(false);
+  const baseProducts = useMemo(
+    () =>
+      productService.getVisibleProducts({
+        categoryId: categoryId === 'all' ? undefined : categoryId,
+      }),
+    [categoryId],
+  );
   const products = useMemo(() => {
-    const baseProducts = productService.getVisibleProducts({
-      categoryId: categoryId === 'all' ? undefined : categoryId,
-    });
-
     const filtered = baseProducts.filter((product) => {
       const discountOk = !onlyDiscount || product.originalPrice > product.price;
       const stockOk = !inStockOnly || product.stock > 10;
@@ -39,9 +42,15 @@ export default function CategoryPage() {
       }
       return 0;
     });
-  }, [categoryId, inStockOnly, onlyDiscount, sortMode]);
+  }, [baseProducts, inStockOnly, onlyDiscount, sortMode]);
 
   const currentCategory = categoryId === 'all' ? null : categories.find((c) => c.id === categoryId);
+  const hasBaseProducts = baseProducts.length > 0;
+  const emptyDescription = hasBaseProducts
+    ? '当前筛选暂无结果'
+    : categoryId === 'all'
+      ? '暂无在售商品，请稍后再来'
+      : `「${currentCategory?.name}」分类暂无在售商品`;
 
   return (
     <Space orientation='vertical' size={24} style={{ width: '100%' }}>
@@ -103,13 +112,7 @@ export default function CategoryPage() {
       {/* 商品列表 / 空状态 */}
       {products.length === 0 ? (
         <div className="category-empty">
-          <Empty
-            description={
-              categoryId === 'all'
-                ? '暂无在售商品，请稍后再来'
-                : `「${currentCategory?.name}」分类暂无在售商品`
-            }
-          >
+          <Empty description={emptyDescription}>
             <Space>
               <Button onClick={() => navigate('/')}>返回首页</Button>
               <Button
