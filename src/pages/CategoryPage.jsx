@@ -1,17 +1,15 @@
-import { App, Button, Card, Col, Empty, Row, Segmented, Space, Typography } from 'antd';
+import { Button, Col, Empty, Row, Space } from 'antd';
 import { useMemo, useState } from 'react';
-import { useNavigate,useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import ProductCard from '../components/shop/ProductCard.jsx';
-import { useApp } from '../contexts/useApp.js';
-import cartService from '../services/cartService.js';
+import { useAddToCart } from '../hooks/useAddToCart.js';
 import categoryService from '../services/categoryService.js';
 import productService from '../services/productService.js';
 
 export default function CategoryPage() {
   const navigate = useNavigate();
-  const { message } = App.useApp();
-  const { currentUser, openCart, refresh } = useApp();
+  const handleAddCart = useAddToCart();
   const categories = categoryService.getCategories();
   const [searchParams] = useSearchParams();
   const [categoryId, setCategoryId] = useState(() => searchParams.get('cat') || 'all');
@@ -24,19 +22,6 @@ export default function CategoryPage() {
   );
 
     const currentCategory = categoryId === 'all' ? null : categories.find((c) => c.id === categoryId);
-
-
-  const handleAddCart = (product) => {
-    if (!currentUser) {
-      message.warning('请先登录再加入购物车');
-      navigate('/login');
-      return;
-    }
-    cartService.addItem(currentUser.id, product.id, 1);
-    refresh();
-    openCart();
-    message.success('已加入购物车');
-  };
 
   return (
     <Space orientation='vertical' size={24} style={{ width: '100%' }}>

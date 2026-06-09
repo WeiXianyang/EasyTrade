@@ -1,27 +1,45 @@
 import { App, Button, Card, Descriptions, Input, Modal, Space, Table, Tag, Typography } from 'antd';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 
 import { useApp } from '../../contexts/useApp.js';
+import mockApiService from '../../services/mockApiService.js';
 import orderService from '../../services/orderService.js';
 import { formatCurrency, formatOrderStatus } from '../../utils/format.js';
 
 export default function AdminOrdersPage() {
   const { message } = App.useApp();
-  const { currentAdmin, refresh, version } = useApp();
+  const { currentAdmin, refresh } = useApp();
   const [shippingOrder, setShippingOrder] = useState(null);
   const [trackingNo, setTrackingNo] = useState('');
-  const orders = orderService.getAllOrders();
+  const [version, setVersion] = useState(0);
   const isAdmin = currentAdmin.role === 'admin';
+
+  const reload = useCallback(() => {
+    setVersion((v) => v + 1);
+    refresh();
+  }, [refresh]);
+
+  // version 变化驱动重渲染，每次渲染重新读取最新数据
+  void version;
+  const orders = orderService.getAllOrders();
 
   const shipOrder = () => {
     if (!trackingNo.trim()) {
       message.warning('请输入物流单号');
       return;
     }
-    orderService.shipOrder(shippingOrder.id, trackingNo.trim());
+    mockApiService.request({
+      method: 'PATCH',
+      path: `/admin/orders/${shippingOrder.id}/ship`,
+      actor: currentAdmin,
+      moduleName: '订单管理',
+      action: '订单发货',
+      target: shippingOrder.orderNo,
+      handler: () => orderService.shipOrder(shippingOrder.id, trackingNo.trim()),
+    });
     setShippingOrder(null);
     setTrackingNo('');
-    refresh();
+    reload();
     message.success('订单已发货');
   };
 
@@ -39,7 +57,6 @@ export default function AdminOrdersPage() {
         pagination={{ pageSize: 8 }}
         scroll={{ x: 1080 }}
         tableLayout="fixed"
-        key={version}
         expandable={{
           expandedRowRender: (record) => (
             <Card>

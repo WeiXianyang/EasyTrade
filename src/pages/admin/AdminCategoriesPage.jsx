@@ -1,17 +1,27 @@
 import { App, Button, Drawer, Form, Input, Popconfirm, Space, Table, Typography } from 'antd';
 import { EditOutlined, PlusOutlined } from '@ant-design/icons';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 
 import categoryService from '../../services/categoryService.js';
+import mockApiService from '../../services/mockApiService.js';
 import productService from '../../services/productService.js';
 import { useApp } from '../../contexts/useApp.js';
 
 export default function AdminCategoriesPage() {
   const { message } = App.useApp();
-  const { refresh } = useApp();
+  const { currentAdmin, refresh } = useApp();
   const [form] = Form.useForm();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
+  const [version, setVersion] = useState(0);
+
+  const reload = useCallback(() => {
+    setVersion((v) => v + 1);
+    refresh();
+  }, [refresh]);
+
+  // version 变化驱动重渲染，每次渲染重新读取最新数据
+  void version;
   const categories = categoryService.getCategories();
   const products = productService.getAdminProducts();
 
@@ -30,14 +40,30 @@ export default function AdminCategoriesPage() {
   const saveCategory = (values) => {
     try {
       if (editingCategory) {
-        categoryService.updateCategory({ ...editingCategory, ...values });
+        mockApiService.request({
+          method: 'PUT',
+          path: `/admin/categories/${editingCategory.id}`,
+          actor: currentAdmin,
+          moduleName: '分类管理',
+          action: '编辑分类',
+          target: values.name,
+          handler: () => categoryService.updateCategory({ ...editingCategory, ...values }),
+        });
         message.success('分类已更新');
       } else {
-        categoryService.addCategory(values);
+        mockApiService.request({
+          method: 'POST',
+          path: '/admin/categories',
+          actor: currentAdmin,
+          moduleName: '分类管理',
+          action: '新增分类',
+          target: values.name,
+          handler: () => categoryService.addCategory(values),
+        });
         message.success('分类已新增');
       }
       closeDrawer();
-      refresh();
+      reload();
     } catch (error) {
       message.error(error.message);
     }
@@ -45,8 +71,17 @@ export default function AdminCategoriesPage() {
 
   const deleteCategory = (categoryId) => {
     try {
-      categoryService.deleteCategory(categoryId, products);
-      refresh();
+      const category = categoryService.getCategoryById(categoryId);
+      mockApiService.request({
+        method: 'DELETE',
+        path: `/admin/categories/${categoryId}`,
+        actor: currentAdmin,
+        moduleName: '分类管理',
+        action: '删除分类',
+        target: category?.name || categoryId,
+        handler: () => categoryService.deleteCategory(categoryId, products),
+      });
+      reload();
       message.success('分类已删除');
     } catch (error) {
       message.error(error.message);
@@ -113,7 +148,7 @@ export default function AdminCategoriesPage() {
       />
 
       <Drawer
-        width={460}
+        size="default"
         title={editingCategory ? '编辑分类' : '新增分类'}
         open={drawerOpen}
         onClose={closeDrawer}

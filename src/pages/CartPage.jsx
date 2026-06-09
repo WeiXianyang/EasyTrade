@@ -1,8 +1,8 @@
 import { App, Button, Empty, Image, InputNumber, Popconfirm, Space, Table, Typography } from 'antd';
 import { DeleteOutlined, ShoppingOutlined } from '@ant-design/icons';
+import { useCallback, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import PriceText from '../components/shop/PriceText.jsx';
 import { useApp } from '../contexts/useApp.js';
 import cartService from '../services/cartService.js';
 import { formatCurrency } from '../utils/format.js';
@@ -10,16 +10,20 @@ import { formatCurrency } from '../utils/format.js';
 export default function CartPage() {
   const navigate = useNavigate();
   const { message } = App.useApp();
-  const { currentUser, refresh } = useApp();
-  const items = cartService.getCart(currentUser.id);
-  const summary = cartService.getSelectedSummary(currentUser.id);
+  const { currentUser } = useApp();
 
-  const update = (action) => {
-    action();
-    refresh();
-  };
+  const [items, setItems] = useState(() => cartService.getCart(currentUser.id));
+  const [summary, setSummary] = useState(() => cartService.getSelectedSummary(currentUser.id));
 
-  const columns = [
+  const reload = useCallback(() => {
+    const newItems = cartService.getCart(currentUser.id);
+    setItems(newItems);
+    setSummary(cartService.getSelectedSummary(currentUser.id));
+    return newItems;
+  }, [currentUser.id]);
+
+  // 用 useMemo 缓存 columns 定义，避免每次渲染重新创建对象数组
+  const columns = useMemo(() => [
     {
       title: '商品',
       dataIndex: 'product',
@@ -46,7 +50,10 @@ export default function CartPage() {
           min={1}
           max={record.product.stock}
           value={record.quantity}
-          onChange={(value) => update(() => cartService.updateQuantity(currentUser.id, record.productId, value))}
+          onChange={(value) => {
+            cartService.updateQuantity(currentUser.id, record.productId, value);
+            reload();
+          }}
         />
       ),
     },
@@ -59,12 +66,18 @@ export default function CartPage() {
       title: '操作',
       width: 90,
       render: (_, record) => (
-        <Popconfirm title="删除该商品？" onConfirm={() => update(() => cartService.removeItem(currentUser.id, record.productId))}>
+        <Popconfirm
+          title="删除该商品？"
+          onConfirm={() => {
+            cartService.removeItem(currentUser.id, record.productId);
+            reload();
+          }}
+        >
           <Button danger type="text" icon={<DeleteOutlined />} />
         </Popconfirm>
       ),
     },
-  ];
+  ], [currentUser.id, reload]);
 
   if (items.length === 0) {
     return (
@@ -75,6 +88,8 @@ export default function CartPage() {
       </Empty>
     );
   }
+
+  const selectedRowKeys = items.filter((item) => item.selected).map((item) => item.productId);
 
   return (
     <Space orientation="vertical" size={18} style={{ width: '100%' }}>
@@ -93,23 +108,37 @@ export default function CartPage() {
         scroll={{ x: 760 }}
         tableLayout="fixed"
         rowSelection={{
-          selectedRowKeys: items.filter((item) => item.selected).map((item) => item.productId),
-          onChange: (selectedRowKeys) => {
+          selectedRowKeys,
+          onChange: (newSelectedRowKeys) => {
             items.forEach((item) => {
-              cartService.setSelected(currentUser.id, item.productId, selectedRowKeys.includes(item.productId));
+              cartService.setSelected(currentUser.id, item.productId, newSelectedRowKeys.includes(item.productId));
             });
-            refresh();
+            reload();
           },
         }}
       />
-      <div className="page-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16 ,position: 'sticky',bottom: 80,boxShadow: '0 -4px 20px rgba(15, 23, 42, 0.08)',zIndex: 10,}}>
+      <div className="cart-page-footer page-card">
         <Space>
-          <Button onClick={() => update(() => cartService.setAllSelected(currentUser.id, true))}>全选</Button>
-          <Button onClick={() => update(() => cartService.setAllSelected(currentUser.id, false))}>取消选择</Button>
+          <Button
+            onClick={() => {
+              cartService.setAllSelected(currentUser.id, true);
+              reload();
+            }}
+          >
+            全选
+          </Button>
+          <Button
+            onClick={() => {
+              cartService.setAllSelected(currentUser.id, false);
+              reload();
+            }}
+          >
+            取消选择
+          </Button>
         </Space>
         <Space>
           <Typography.Text>已选 {summary.count} 件</Typography.Text>
-          <Typography.Title level={4} style={{ margin: 0 }}>
+          <Typography.Title level={4} className="cart-total-price">
             {formatCurrency(summary.total)}
           </Typography.Title>
           <Button

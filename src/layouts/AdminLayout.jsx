@@ -1,15 +1,18 @@
-import { Button, Layout, Menu, Space } from 'antd';
+import { Button, Layout, Menu, Space, Tooltip } from 'antd';
 import {
   AppstoreOutlined,
   DashboardOutlined,
   LogoutOutlined,
+  MoonOutlined,
   ProductOutlined,
   ShopOutlined,
   ShoppingOutlined,
+  SunOutlined,
   TeamOutlined,
 } from '@ant-design/icons';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 
+import AdminOpsTools from '../components/admin/AdminOpsTools.jsx';
 import { useApp } from '../contexts/useApp.js';
 import { canAccess, getRoleLabel } from '../services/permissionService.js';
 
@@ -24,7 +27,7 @@ const allItems = [
 export default function AdminLayout() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { currentAdmin, logoutAdmin } = useApp();
+  const { currentAdmin, logoutAdmin, theme, toggleTheme } = useApp();
   const items = allItems
     .filter((item) => canAccess(currentAdmin.role, item.moduleName))
     .map((item) => ({ key: item.key, icon: item.icon, label: item.label }));
@@ -47,9 +50,18 @@ export default function AdminLayout() {
       </Layout.Sider>
       <Layout>
         <Layout.Header className="admin-topbar">
-          <Space>
-            <span>{currentAdmin.name}</span>
-            <span className="muted">{getRoleLabel(currentAdmin.role)}</span>
+          <Space className="admin-topbar-inner">
+            <AdminOpsTools />
+            <Tooltip title={theme === 'light' ? '切换暗色' : '切换亮色'}>
+              <Button
+                type="text"
+                icon={theme === 'light' ? <MoonOutlined /> : <SunOutlined />}
+                onClick={toggleTheme}
+                aria-label="切换主题"
+              />
+            </Tooltip>
+            <span className="admin-user-name">{currentAdmin.name}</span>
+            <span className="muted admin-role-name">{getRoleLabel(currentAdmin.role)}</span>
             <Button icon={<ShopOutlined />} onClick={() => navigate('/')}>
               返回商城
             </Button>

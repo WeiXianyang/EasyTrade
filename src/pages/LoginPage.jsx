@@ -1,6 +1,5 @@
 import { App, Form, Input, Tabs } from 'antd';
-import { LockOutlined, MailOutlined, PhoneOutlined, UserOutlined } from '@ant-design/icons';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 
 import { useApp } from '../contexts/useApp.js';
@@ -8,15 +7,26 @@ import './LoginPage.css';
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { message } = App.useApp();
   const { loginUser, registerUser } = useApp();
   const [activeTab, setActiveTab] = useState('login');
+
+  /**
+   * 登录/注册成功后跳回来源页
+   * RequireUser 守卫会将来源路径写入 location.state.from
+   * 若无来源（直接访问登录页），则跳首页
+   */
+  const redirectAfterAuth = () => {
+    const from = location.state?.from?.pathname || '/';
+    navigate(from, { replace: true });
+  };
 
   const handleLogin = (values) => {
     try {
       loginUser(values.identifier, values.password);
       message.success('登录成功');
-      navigate('/');
+      redirectAfterAuth();
     } catch (error) {
       message.error(error.message);
     }
@@ -26,7 +36,7 @@ export default function LoginPage() {
     try {
       registerUser(values);
       message.success('注册成功');
-      navigate('/');
+      redirectAfterAuth();
     } catch (error) {
       message.error(error.message);
     }

@@ -1,12 +1,13 @@
-import { Badge, Button, Drawer, Empty, Image, InputNumber, Layout, List, Space, Typography } from 'antd';
-import {useEffect, useState} from 'react';
+import { Badge, Button, Drawer, Empty, Flex, Image, InputNumber, Layout, Space, Tooltip, Typography } from 'antd';
+import { useEffect, useReducer, useState } from 'react';
 import {
   AppstoreOutlined,
   DashboardOutlined,
   DeleteOutlined,
   HomeOutlined,
   LoginOutlined,
-  ShoppingCartOutlined,
+  MoonOutlined,
+  SunOutlined,
   UserOutlined,
 } from '@ant-design/icons';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
@@ -53,15 +54,26 @@ export default function ShopLayout() {
     
   }, []);
   const navigate = useNavigate();
-  const { cartCount, cartDrawerOpen, closeCart, currentUser, logoutUser, openCart: openCartDrawer, refresh } = useApp();
+  const { cartCount, cartDrawerOpen, closeCart, currentUser, logoutUser, openCart: openCartDrawer, refresh, theme, toggleTheme } = useApp();
   const activeKey = selectedKey(location.pathname);
+
+  // 本地 state 持有购物车快照，Drawer 打开时强制刷新
+  const [localVersion, forceUpdate] = useReducer((n) => n + 1, 0);
+
+  useEffect(() => {
+    if (cartDrawerOpen) {
+      forceUpdate(); // Drawer 每次打开时重新从 localStorage 读取
+    }
+  }, [cartDrawerOpen]);
 
   const cartItems = currentUser ? cartService.getCart(currentUser.id) : [];
   const cartSummary = currentUser ? cartService.getSelectedSummary(currentUser.id) : { count: 0, total: 0 };
+  void localVersion; // 消费 localVersion，使上方两行在 forceUpdate 后重新执行
 
   const updateCart = (action) => {
     action();
     refresh();
+    forceUpdate(); // Drawer 内操作（删除/改数量）后立即刷新列表
   };
 
   const goCheckout = () => {
@@ -75,10 +87,19 @@ export default function ShopLayout() {
         <div className="shop-header-inner">
           <div className="shop-header-main">
             <Link className="brand" to="/">
-              <span className="brand-mark">ET</span>
+              <span className="brand-mark"></span>
               <span>EasyTrade</span>
             </Link>
             <Space>
+              {/* 主题切换按钮 */}
+              <Tooltip title={theme === 'light' ? '切换暗色' : '切换亮色'}>
+                <Button
+                  type="text"
+                  icon={theme === 'light' ? <MoonOutlined /> : <SunOutlined />}
+                  onClick={toggleTheme}
+                  aria-label="切换主题"
+                />
+              </Tooltip>
               {currentUser ? (
                 <>
                   <span className="muted">{currentUser.name}</span>
@@ -114,13 +135,13 @@ export default function ShopLayout() {
         title="购物车"
         open={cartDrawerOpen}
         onClose={closeCart}
-        width={380}
+        size="default"
         footer={
           currentUser && cartItems.length > 0 ? (
             <div className="cart-drawer-footer">
               <div>
                 <Typography.Text className="muted">已选 {cartSummary.count} 件</Typography.Text>
-                <Typography.Title level={4} style={{ margin: 0 }}>
+                <Typography.Title level={4} className="cart-total-price">
                   {formatCurrency(cartSummary.total)}
                 </Typography.Title>
               </div>
@@ -158,39 +179,31 @@ export default function ShopLayout() {
             </Button>
           </Empty>
         ) : (
-          <List
-            className="cart-drawer-list"
-            dataSource={cartItems}
-            renderItem={(item) => (
-              <List.Item
-                actions={[
-                  <Button
-                    key="remove"
-                    danger
-                    type="text"
-                    icon={<DeleteOutlined />}
-                    onClick={() => updateCart(() => cartService.removeItem(currentUser.id, item.productId))}
-                  />,
-                ]}
-              >
-                <List.Item.Meta
-                  avatar={<Image width={56} height={42} src={item.product.image} alt={item.product.name} style={{ objectFit: 'cover', borderRadius: 8 }} />}
-                  title={<Typography.Text ellipsis>{item.product.name}</Typography.Text>}
-                  description={
-                    <Space direction="vertical" size={4}>
-                      <Typography.Text className="price">{formatCurrency(item.product.price)}</Typography.Text>
-                      <InputNumber
-                        min={1}
-                        max={item.product.stock}
-                        value={item.quantity}
-                        onChange={(value) => updateCart(() => cartService.updateQuantity(currentUser.id, item.productId, value))}
-                      />
-                    </Space>
-                  }
-                />
-              </List.Item>
-            )}
-          />
+          <div className="cart-drawer-list">
+            {cartItems.map((item) => (
+              <Flex key={item.productId} align="center" gap={12} className="cart-drawer-item">
+                <Image width={56} height={42} src={item.product.image} alt={item.product.name} style={{ objectFit: 'cover', borderRadius: 8 }} />
+                <Flex vertical flex={1} gap={4}>
+                  <Typography.Text ellipsis>{item.product.name}</Typography.Text>
+                  <Typography.Text className="price">{formatCurrency(item.product.price)}</Typography.Text>
+                  <Flex align="center" gap={8}>
+                    <InputNumber
+                      min={1}
+                      max={item.product.stock}
+                      value={item.quantity}
+                      onChange={(value) => updateCart(() => cartService.updateQuantity(currentUser.id, item.productId, value))}
+                    />
+                    <Button
+                      danger
+                      type="text"
+                      icon={<DeleteOutlined />}
+                      onClick={() => updateCart(() => cartService.removeItem(currentUser.id, item.productId))}
+                    />
+                  </Flex>
+                </Flex>
+              </Flex>
+            ))}
+          </div>
         )}
       </Drawer>
     </Layout>

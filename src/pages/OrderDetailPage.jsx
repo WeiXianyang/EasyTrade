@@ -1,4 +1,4 @@
-import { Button, Card, Descriptions, Empty, List, Space, Steps, Tag, Typography } from 'antd';
+import { Button, Card, Descriptions, Empty, Flex, Space, Steps, Tag, Typography } from 'antd';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import PriceText from '../components/shop/PriceText.jsx';
@@ -65,28 +65,30 @@ export default function OrderDetailPage() {
         </Descriptions>
       </Card>
       <Card title="商品信息">
-        <List
-          dataSource={order.items}
-          renderItem={(item) => (
-            <List.Item>
-              <List.Item.Meta
-                avatar={<img src={item.image} alt={item.name} width={72} height={54} style={{ objectFit: 'cover', borderRadius: 8 }} />}
-                title={item.name}
-                description={`数量 x ${item.quantity}`}
-              />
+        <Flex vertical gap={12}>
+          {order.items.map((item) => (
+            <Flex key={item.productId} align="center" justify="space-between" gap={12}>
+              <Flex align="center" gap={12} flex={1}>
+                <img src={item.image} alt={item.name} width={72} height={54} style={{ objectFit: 'cover', borderRadius: 8 }} />
+                <div>
+                  <Typography.Text strong>{item.name}</Typography.Text>
+                  <br />
+                  <Typography.Text className="muted">数量 x {item.quantity}</Typography.Text>
+                </div>
+              </Flex>
               <PriceText price={item.price * item.quantity} />
-            </List.Item>
-          )}
-        />
+            </Flex>
+          ))}
+        </Flex>
       </Card>
       <Card title="物流信息">
         <Typography.Text>承运方：{order.logistics.company}</Typography.Text>
         <div className="muted">物流单号：{order.logistics.trackingNo || '待发货'}</div>
-        <List
-          size="small"
-          dataSource={order.logistics.traces}
-          renderItem={(trace) => <List.Item>{trace}</List.Item>}
-        />
+        <Flex vertical gap={4}>
+          {order.logistics.traces.map((trace, idx) => (
+            <Typography.Text key={idx}>{trace}</Typography.Text>
+          ))}
+        </Flex>
       </Card>
     </Space>
   );

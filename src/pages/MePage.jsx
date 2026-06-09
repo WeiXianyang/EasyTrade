@@ -9,7 +9,7 @@ import './MePage.css';
 
 export default function MePage() {
   const navigate = useNavigate();
-  const { currentUser } = useApp();
+  const { currentUser, logoutUser } = useApp();
   const orders = orderService.getOrdersByUser(currentUser.id);
 
   const avatarLetter = currentUser.name?.charAt(0) || 'U';
@@ -55,6 +55,9 @@ export default function MePage() {
               <a className="flip-card-orders-link" onClick={() => navigate('/orders')}>
                 查看全部订单 →
               </a>
+              <Button size="small" danger onClick={logoutUser}>
+                退出登录
+              </Button>
             </div>
 
           </div>

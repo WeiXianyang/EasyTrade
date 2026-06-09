@@ -12,6 +12,9 @@ coverage/
 *.tsbuildinfo
 .eslintcache
 
+# WorkBuddy workspace
+.workbuddy/
+
 # Local environment files
 *.local
 .env

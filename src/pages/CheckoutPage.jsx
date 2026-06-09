@@ -1,9 +1,10 @@
-import { App, Button, Card, Col, Form, Input, List, Row, Space, Typography } from 'antd';
+import { App, Button, Card, Col, Flex, Form, Input, Row, Space, Typography } from 'antd';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import PriceText from '../components/shop/PriceText.jsx';
 import { useApp } from '../contexts/useApp.js';
 import cartService from '../services/cartService.js';
+import mockApiService from '../services/mockApiService.js';
 import orderService from '../services/orderService.js';
 import productService from '../services/productService.js';
 import { formatCurrency } from '../utils/format.js';
@@ -40,9 +41,25 @@ export default function CheckoutPage() {
 
   const submitOrder = (values) => {
     try {
-      const order = orderService.createOrderFromCart(currentUser.id, checkoutItems, values);
+      const order = mockApiService.request({
+        method: 'POST',
+        path: '/orders',
+        actor: currentUser,
+        moduleName: '前台订单',
+        action: '创建订单',
+        target: checkoutItems.map((item) => item.product.name).join('、'),
+        handler: () => orderService.createOrderFromCart(currentUser.id, checkoutItems, values),
+      });
       if (!buyNowProductId) {
-        cartService.removeSelected(currentUser.id);
+        mockApiService.request({
+          method: 'DELETE',
+          path: '/cart/items/selected',
+          actor: currentUser,
+          moduleName: '前台购物车',
+          action: '清理已结算商品',
+          target: '购物车已选商品',
+          handler: () => cartService.removeSelected(currentUser.id),
+        });
       }
       refresh();
       message.success('订单已创建');
@@ -84,20 +101,25 @@ export default function CheckoutPage() {
         </Col>
         <Col xs={24} lg={10}>
           <Card title="商品清单">
-            <List
-              dataSource={checkoutItems}
-              locale={{ emptyText: '暂无结算商品' }}
-              renderItem={(item) => (
-                <List.Item>
-                  <List.Item.Meta
-                    avatar={<img src={item.product.image} alt={item.product.name} width={64} height={48} style={{ objectFit: 'cover', borderRadius: 8 }} />}
-                    title={item.product.name}
-                    description={`数量 x ${item.quantity}`}
-                  />
-                  <PriceText price={item.subtotal} />
-                </List.Item>
-              )}
-            />
+            {checkoutItems.length === 0 ? (
+              <Typography.Text className="muted">暂无结算商品</Typography.Text>
+            ) : (
+              <Flex vertical gap={12}>
+                {checkoutItems.map((item) => (
+                  <Flex key={item.productId} align="center" justify="space-between" gap={12}>
+                    <Flex align="center" gap={12} flex={1}>
+                      <img src={item.product.image} alt={item.product.name} width={64} height={48} style={{ objectFit: 'cover', borderRadius: 8 }} />
+                      <div>
+                        <Typography.Text strong>{item.product.name}</Typography.Text>
+                        <br />
+                        <Typography.Text className="muted">数量 x {item.quantity}</Typography.Text>
+                      </div>
+                    </Flex>
+                    <PriceText price={item.subtotal} />
+                  </Flex>
+                ))}
+              </Flex>
+            )}
             <div style={{ textAlign: 'right', marginTop: 16 }}>
               <Typography.Text>应付合计</Typography.Text>
               <Typography.Title level={3} style={{ margin: 0 }}>

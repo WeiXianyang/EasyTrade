@@ -1,12 +1,13 @@
 import { App, Button, Col, Descriptions, Empty, Image, InputNumber, Row, Space, Tag, Typography } from 'antd';
 import { ShoppingCartOutlined } from '@ant-design/icons';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import PriceText from '../components/shop/PriceText.jsx';
 import { useApp } from '../contexts/useApp.js';
 import cartService from '../services/cartService.js';
 import categoryService from '../services/categoryService.js';
+import mockApiService from '../services/mockApiService.js';
 import productService from '../services/productService.js';
 
 export default function ProductDetailPage() {
@@ -16,35 +17,44 @@ export default function ProductDetailPage() {
   const { currentUser, openCart, refresh } = useApp();
   const [quantity, setQuantity] = useState(1);
   const product = productService.getProductById(productId);
+  const category = product ? categoryService.getCategoryById(product.categoryId) : null;
+  const canBuy = product ? product.status === 'on' && product.stock > 0 : false;
 
-  if (!product) {
-    return <Empty description="商品不存在" />;
-  }
-
-  const category = categoryService.getCategoryById(product.categoryId);
-  const canBuy = product.status === 'on' && product.stock > 0;
-
-  const ensureLogin = () => {
+  const ensureLogin = useCallback(() => {
     if (!currentUser) {
       message.warning('请先登录');
       navigate('/login');
       return false;
     }
     return true;
-  };
+  }, [currentUser, message, navigate]);
 
-  const addCart = () => {
+  const addCart = useCallback(() => {
+    if (!product) return;
     if (!ensureLogin()) return;
-    cartService.addItem(currentUser.id, product.id, quantity);
+    mockApiService.request({
+      method: 'POST',
+      path: '/cart/items',
+      actor: currentUser,
+      moduleName: '前台购物车',
+      action: '加入购物车',
+      target: product.name,
+      handler: () => cartService.addItem(currentUser.id, product.id, quantity),
+    });
     refresh();
     openCart();
     message.success('已加入购物车');
-  };
+  }, [ensureLogin, currentUser, product, quantity, refresh, openCart, message]);
 
-  const buyNow = () => {
+  const buyNow = useCallback(() => {
+    if (!product) return;
     if (!ensureLogin()) return;
     navigate(`/checkout?buyNow=${product.id}&quantity=${quantity}`);
-  };
+  }, [ensureLogin, navigate, product, quantity]);
+
+  if (!product) {
+    return <Empty description="商品不存在" />;
+  }
 
   return (
     <div className="page-card">

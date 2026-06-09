@@ -7,6 +7,8 @@ const seedByKey = {
   [STORAGE_KEYS.users]: seedUsers,
   [STORAGE_KEYS.carts]: [],
   [STORAGE_KEYS.rolePermissions]: seedRolePermissions,
+  [STORAGE_KEYS.requestLogs]: [],
+  [STORAGE_KEYS.auditLogs]: [],
 };
 
 function clone(value) {
@@ -63,10 +65,18 @@ export function createStorageService(storage = globalThis.localStorage) {
     read,
     write,
     remove,
-    reset() {
+    reset({ preserveSessions = false } = {}) {
+      const currentUser = preserveSessions ? read(STORAGE_KEYS.currentUser, null) : null;
+      const currentAdmin = preserveSessions ? read(STORAGE_KEYS.currentAdmin, null) : null;
+
       Object.keys(seedByKey).forEach((key) => write(key, clone(seedByKey[key])));
-      remove(STORAGE_KEYS.currentUser);
-      remove(STORAGE_KEYS.currentAdmin);
+      if (preserveSessions) {
+        if (currentUser) write(STORAGE_KEYS.currentUser, currentUser);
+        if (currentAdmin) write(STORAGE_KEYS.currentAdmin, currentAdmin);
+      } else {
+        remove(STORAGE_KEYS.currentUser);
+        remove(STORAGE_KEYS.currentAdmin);
+      }
     },
   };
 }

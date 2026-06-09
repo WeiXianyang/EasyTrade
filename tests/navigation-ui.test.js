@@ -37,3 +37,18 @@ test('deep shopping pages expose explicit return navigation', () => {
     assert.match(source, /返回|继续/);
   }
 });
+
+test('shopping flow mutations are visible in mock api logs', () => {
+  const pages = [
+    readSource('src/pages/HomePage.jsx'),
+    readSource('src/pages/CategoryPage.jsx'),
+    readSource('src/pages/ProductDetailPage.jsx'),
+    readSource('src/pages/CheckoutPage.jsx'),
+    readSource('src/pages/PayPage.jsx'),
+  ].join('\n');
+
+  assert.match(pages, /mockApiService/);
+  assert.match(pages, /\/cart\/items/);
+  assert.match(pages, /\/orders/);
+  assert.match(pages, /\/pay/);
+});

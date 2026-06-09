@@ -15,30 +15,39 @@ import {
   Typography,
 } from 'antd';
 import { EditOutlined, PlusOutlined } from '@ant-design/icons';
-import { useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 import categoryService from '../../services/categoryService.js';
+import mockApiService from '../../services/mockApiService.js';
 import productService from '../../services/productService.js';
 import { formatCurrency } from '../../utils/format.js';
 import { useApp } from '../../contexts/useApp.js';
 
 export default function AdminProductsPage() {
   const { message } = App.useApp();
-  const { refresh } = useApp();
+  const { currentAdmin, refresh } = useApp();
   const [form] = Form.useForm();
   const [keyword, setKeyword] = useState('');
   const [status, setStatus] = useState('all');
   const [editingProduct, setEditingProduct] = useState(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [version, setVersion] = useState(0);
   const categories = categoryService.getCategories();
-  const products = (() => {
+
+  const reload = useCallback(() => {
+    setVersion((v) => v + 1);
+    refresh();
+  }, [refresh]);
+
+  const products = useMemo(() => {
+    void version;
     const lowerKeyword = keyword.trim().toLowerCase();
     return productService.getAdminProducts().filter((product) => {
       const matchesKeyword = !lowerKeyword || product.name.toLowerCase().includes(lowerKeyword);
       const matchesStatus = status === 'all' || product.status === status;
       return matchesKeyword && matchesStatus;
     });
-  })();
+  }, [keyword, status, version]);
 
   const openDrawer = (product = null) => {
     setEditingProduct(product);
@@ -62,16 +71,19 @@ export default function AdminProductsPage() {
       ...values,
       tags: values.tags ? values.tags.split(/[，,]/).map((tag) => tag.trim()).filter(Boolean) : [],
     };
-    if (editingProduct) {
-      productService.updateProduct(payload);
-      message.success('商品已更新');
-    } else {
-      productService.addProduct(payload);
-      message.success('商品已新增');
-    }
+    mockApiService.request({
+      method: editingProduct ? 'PUT' : 'POST',
+      path: editingProduct ? `/admin/products/${editingProduct.id}` : '/admin/products',
+      actor: currentAdmin,
+      moduleName: '商品管理',
+      action: editingProduct ? '编辑商品' : '新增商品',
+      target: payload.name,
+      handler: () => (editingProduct ? productService.updateProduct(payload) : productService.addProduct(payload)),
+    });
+    message.success(editingProduct ? '商品已更新' : '商品已新增');
     setDrawerOpen(false);
     form.resetFields();
-    refresh();
+    reload();
   };
 
   return (
@@ -144,8 +156,16 @@ export default function AdminProductsPage() {
                 checkedChildren="在售"
                 unCheckedChildren="下架"
                 onChange={(checked) => {
-                  productService.toggleStatus(record.id, checked ? 'on' : 'off');
-                  refresh();
+                  mockApiService.request({
+                    method: 'PATCH',
+                    path: `/admin/products/${record.id}/status`,
+                    actor: currentAdmin,
+                    moduleName: '商品管理',
+                    action: checked ? '上架商品' : '下架商品',
+                    target: record.name,
+                    handler: () => productService.toggleStatus(record.id, checked ? 'on' : 'off'),
+                  });
+                  reload();
                 }}
               />
             ),
@@ -169,8 +189,16 @@ export default function AdminProductsPage() {
                   title="删除商品？"
                   description="删除后前台和后台都不再显示该商品。"
                   onConfirm={() => {
-                    productService.deleteProduct(record.id);
-                    refresh();
+                    mockApiService.request({
+                      method: 'DELETE',
+                      path: `/admin/products/${record.id}`,
+                      actor: currentAdmin,
+                      moduleName: '商品管理',
+                      action: '删除商品',
+                      target: record.name,
+                      handler: () => productService.deleteProduct(record.id),
+                    });
+                    reload();
                     message.success('商品已删除');
                   }}
                 >
@@ -184,7 +212,7 @@ export default function AdminProductsPage() {
         ]}
       />
       <Drawer
-        width={520}
+        size="large"
         title={editingProduct ? '编辑商品' : '新增商品'}
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
