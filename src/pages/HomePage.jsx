@@ -1,6 +1,6 @@
 import { Button, Carousel, Col, Row, Space, Typography } from 'antd';
 import { FireOutlined, ShoppingCartOutlined } from '@ant-design/icons';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useEffect, useMemo, useState } from 'react';
 
 import ProductCard from '../components/shop/ProductCard.jsx';
@@ -35,8 +35,9 @@ export default function HomePage() {
   }, []);
 
   const categories = categoryService.getCategories();
+  const hasKeyword = keyword.trim().length > 0;
   const products = useMemo(() => productService.getVisibleProducts({ keyword }), [keyword]);
-  const hotProducts = keyword ? products : productService.getHotProducts(4);
+  const hotProducts = hasKeyword ? products : productService.getHotProducts(4);
   const flashSaleProducts = useMemo(() => products
     .filter((product) => product.originalPrice > product.price)
     .sort((a, b) => (b.originalPrice - b.price) - (a.originalPrice - a.price))
@@ -75,7 +76,7 @@ export default function HomePage() {
           </div>
         </Carousel>
 
-        {!keyword && (
+        {!hasKeyword && (
           <div className="quick-categories">
             {categories.map((cat) => (
               <div
@@ -88,7 +89,7 @@ export default function HomePage() {
             ))}
           </div>
         )}
-        {flashSaleProducts.length > 0 && (
+        {!hasKeyword && flashSaleProducts.length > 0 && (
           <section className="flash-sale-section">
             <div className="section-head flash-sale-head">
               <div>
@@ -101,30 +102,30 @@ export default function HomePage() {
             <Row gutter={[16, 16]}>
               {flashSaleProducts.map((product) => (
                 <Col key={product.id} xs={24} md={8}>
-                  <article className="flash-sale-card" onClick={() => navigate(`/detail/${product.id}`)}>
-                    <div className="flash-sale-image-wrap">
-                      <img src={product.image} alt={product.name} />
-                      <span className="flash-price-badge">秒杀价</span>
-                    </div>
-                    <div className="flash-sale-info">
-                      <Typography.Text className="flash-sale-name" ellipsis title={product.name}>
-                        {product.name}
-                      </Typography.Text>
-                      <div className="flash-sale-price-line">
-                        <span className="flash-sale-price">{formatCurrency(product.price)}</span>
-                        <span className="original-price">{formatCurrency(product.originalPrice)}</span>
+                  <article className="flash-sale-card">
+                    <Link className="flash-sale-link" to={`/detail/${product.id}`}>
+                      <div className="flash-sale-image-wrap">
+                        <img src={product.image} alt={product.name} />
+                        <span className="flash-price-badge">秒杀价</span>
                       </div>
-                      <Button
-                        type="primary"
-                        icon={<ShoppingCartOutlined />}
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          handleAddCart(product);
-                        }}
-                      >
-                        加入购物车
-                      </Button>
-                    </div>
+                      <div className="flash-sale-info">
+                        <Typography.Text className="flash-sale-name" ellipsis title={product.name}>
+                          {product.name}
+                        </Typography.Text>
+                        <div className="flash-sale-price-line">
+                          <span className="flash-sale-price">{formatCurrency(product.price)}</span>
+                          <span className="original-price">{formatCurrency(product.originalPrice)}</span>
+                        </div>
+                      </div>
+                    </Link>
+                    <Button
+                      className="flash-sale-cart-btn"
+                      type="primary"
+                      icon={<ShoppingCartOutlined />}
+                      onClick={() => handleAddCart(product)}
+                    >
+                      加入购物车
+                    </Button>
                   </article>
                 </Col>
               ))}
@@ -135,7 +136,7 @@ export default function HomePage() {
           <div className="section-head">
             <div>
               <Typography.Title level={2}>
-                <FireOutlined /> {keyword ? '搜索结果' : '热门商品'}
+                <FireOutlined /> {hasKeyword ? '搜索结果' : '热门商品'}
               </Typography.Title>
             </div>
           </div>

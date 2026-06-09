@@ -296,16 +296,29 @@ a {
 }
 
 .flash-sale-card {
-  display: grid;
-  grid-template-columns: 112px minmax(0, 1fr);
+  display: flex;
+  flex-direction: column;
   gap: 14px;
   height: 100%;
   padding: 12px;
   background: var(--color-bg-card);
   border: 1px solid var(--color-border-light);
   border-radius: 8px;
-  cursor: pointer;
   transition: transform 0.28s ease, box-shadow 0.28s ease, border-color 0.28s ease;
+}
+
+.flash-sale-link {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  gap: 14px;
+  min-width: 0;
+  color: inherit;
+}
+
+.flash-sale-link:focus-visible {
+  outline: 2px solid var(--color-brand-primary);
+  outline-offset: 3px;
+  border-radius: 8px;
 }
 
 .flash-sale-card:hover {
@@ -378,6 +391,11 @@ a {
   color: var(--color-brand-primary);
   font-weight: 900;
   font-size: 20px;
+}
+
+.flash-sale-cart-btn {
+  align-self: flex-start;
+  margin-left: 126px;
 }
 
 .muted {
@@ -939,6 +957,29 @@ a {
   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  /* Disable seckillFloat and skeletonShimmer, then remove hover lift transforms. */
+  .flash-price-badge,
+  .skeleton-shimmer,
+  .hero-panel,
+  .flash-sale-section,
+  .fade-in-section,
+  .product-card,
+  .product-cover,
+  .theme-toggle-btn,
+  .hero-panel:hover,
+  .flash-sale-card:hover,
+  .fade-in-section:hover,
+  .product-card:hover,
+  .product-card:hover .product-cover,
+  .theme-toggle-btn:hover,
+  .theme-toggle-btn:active {
+    animation: none !important;
+    transition-duration: 0.01ms !important;
+    transform: none !important;
+  }
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════
    响应式
    ═══════════════════════════════════════════════════════════════════════════ */
@@ -957,8 +998,16 @@ a {
   }
 
   .flash-sale-card {
+    gap: 10px;
+  }
+
+  .flash-sale-link {
     grid-template-columns: 86px minmax(0, 1fr);
     gap: 10px;
+  }
+
+  .flash-sale-cart-btn {
+    margin-left: 96px;
   }
 
   .flash-sale-price {

@@ -179,6 +179,34 @@ test('home page exposes a discounted flash sale section with floating seckill la
   assert.match(themeCss, /\.flash-price-badge[\s\S]*animation:\s*seckillFloat/);
 });
 
+test('home page hides flash sale while searching and keeps search products separate', () => {
+  const homePage = readSource('src/pages/HomePage.jsx');
+
+  assert.match(homePage, /const hasKeyword\s*=\s*keyword\.trim\(\)\.length\s*>\s*0/);
+  assert.match(homePage, /const hotProducts\s*=\s*hasKeyword\s*\?\s*products\s*:\s*productService\.getHotProducts\(4\)/);
+  assert.match(homePage, /\{!hasKeyword && flashSaleProducts\.length > 0 && \(/);
+});
+
+test('flash sale detail navigation uses links instead of bare clickable articles', () => {
+  const homePage = readSource('src/pages/HomePage.jsx');
+  const flashCardSnippet = homePage.match(/<article className="flash-sale-card"[\s\S]*?<\/article>/)?.[0] || '';
+  const flashLinkSnippet = flashCardSnippet.match(/<Link[\s\S]*?<\/Link>/)?.[0] || '';
+
+  assert.match(homePage, /import \{ Link,\s*useNavigate \} from 'react-router-dom'/);
+  assert.doesNotMatch(homePage, /<article[^>]*onClick=/);
+  assert.match(flashCardSnippet, /<Link[\s\S]*className="flash-sale-link"[\s\S]*to=\{`\/detail\/\$\{product\.id\}`\}/);
+  assert.doesNotMatch(flashLinkSnippet, /<Button/);
+});
+
+test('page skeleton announces loading state while hiding decorative shimmer content', () => {
+  const pageSkeleton = readSource('src/components/shop/PageSkeleton.jsx');
+
+  assert.match(pageSkeleton, /role="status"/);
+  assert.match(pageSkeleton, /aria-live="polite"/);
+  assert.match(pageSkeleton, /aria-busy="true"/);
+  assert.match(pageSkeleton, /aria-hidden="true"/);
+});
+
 test('theme switch buttons have a stable transform animation class in shop and admin layouts', () => {
   const shopLayout = readSource('src/layouts/ShopLayout.jsx');
   const adminLayout = readSource('src/layouts/AdminLayout.jsx');
@@ -190,4 +218,17 @@ test('theme switch buttons have a stable transform animation class in shop and a
   assert.match(themeCss, /\.theme-toggle-btn:hover[\s\S]*transform:/);
   assert.match(themeCss, /\.theme-toggle-btn:active[\s\S]*transform:/);
   assert.match(themeCss, /body[\s\S]*transition:[^;]*background[^;]*color/);
+});
+
+test('motion-heavy storefront effects are reduced for prefers-reduced-motion users', () => {
+  const themeCss = readSource('src/theme/theme.css');
+  const reducedMotionBlock = themeCss.match(/@media\s*\(prefers-reduced-motion:\s*reduce\)\s*\{[\s\S]*?\n\}/)?.[0] || '';
+
+  assert.match(reducedMotionBlock, /seckillFloat/);
+  assert.match(reducedMotionBlock, /skeletonShimmer/);
+  assert.match(reducedMotionBlock, /\.hero-panel:hover/);
+  assert.match(reducedMotionBlock, /\.flash-sale-card:hover/);
+  assert.match(reducedMotionBlock, /\.theme-toggle-btn:hover/);
+  assert.match(reducedMotionBlock, /animation:\s*none/);
+  assert.match(reducedMotionBlock, /transform:\s*none/);
 });
