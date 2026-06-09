@@ -1,13 +1,34 @@
 import { App, Button, Form, Input } from 'antd';
-import { useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { useApp } from '../../contexts/useApp.js';
 import '../LoginPage.css';          
 
 export default function AdminLoginPage({ dashboardPath = '/admin', shopUrl = '/' }) {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { message } = App.useApp();
-  const { loginAdmin } = useApp();
+  const { acceptAdminHandoff, loginAdmin } = useApp();
+
+  useEffect(() => {
+    const handoff = searchParams.get('handoff');
+    if (!handoff) {
+      return;
+    }
+
+    try {
+      const admin = JSON.parse(decodeURIComponent(handoff));
+      if (!['admin', 'operator'].includes(admin.role)) {
+        throw new Error('无效的后台身份');
+      }
+      const acceptedAdmin = acceptAdminHandoff(admin);
+      message.success(`欢迎进入后台，${acceptedAdmin.name}`);
+      navigate(dashboardPath, { replace: true });
+    } catch (error) {
+      message.error(error.message || '后台登录交接失败');
+    }
+  }, [acceptAdminHandoff, dashboardPath, message, navigate, searchParams]);
 
   const handleLogin = (values) => {
     try {

@@ -13,11 +13,12 @@ export default function LoginPage() {
   const [activeTab, setActiveTab] = useState('login');
   const [identity, setIdentity] = useState('user');
 
-  function getAdminEntryUrl() {
+  function getAdminEntryUrl(encodedHandoff) {
     if (import.meta.env.VITE_ADMIN_ENTRY_URL) {
-      return import.meta.env.VITE_ADMIN_ENTRY_URL;
+      return `${import.meta.env.VITE_ADMIN_ENTRY_URL}#/login?handoff=${encodedHandoff}`;
     }
-    return import.meta.env.DEV ? 'http://localhost:5174/admin.html#/dashboard' : '/admin.html#/dashboard';
+    const adminEntryUrl = import.meta.env.DEV ? 'http://localhost:5174/admin.html' : '/admin.html';
+    return `${adminEntryUrl}#/login?handoff=${encodedHandoff}`;
   }
 
   /**
@@ -34,8 +35,14 @@ export default function LoginPage() {
     try {
       if (identity === 'admin') {
         const admin = loginAdmin(values.identifier, values.password);
+        const adminHandoff = {
+          id: admin.id,
+          username: admin.username,
+          role: admin.role,
+          name: admin.name,
+        };
         message.success(`欢迎进入后台，${admin.name}`);
-        window.location.href = getAdminEntryUrl();
+        window.location.href = getAdminEntryUrl(encodeURIComponent(JSON.stringify(adminHandoff)));
         return;
       }
 

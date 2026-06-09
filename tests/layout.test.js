@@ -15,6 +15,21 @@ test('shop layout exposes cart in bottom navigation and support in the floating 
   assert.match(themeCss, /\.shop-bottom-nav[\s\S]*bottom:\s*0/);
 });
 
+test('shop bottom navigation keeps the required course demo order', () => {
+  const homeIndex = shopLayout.indexOf("label: '首页'");
+  const cartIndex = shopLayout.indexOf("label: '购物车'");
+  const categoryIndex = shopLayout.indexOf("label: '分类'");
+  const meIndex = shopLayout.indexOf("label: '我的'");
+
+  assert.ok(homeIndex >= 0);
+  assert.ok(cartIndex >= 0);
+  assert.ok(categoryIndex >= 0);
+  assert.ok(meIndex >= 0);
+  assert.ok(homeIndex < cartIndex);
+  assert.ok(cartIndex < categoryIndex);
+  assert.ok(categoryIndex < meIndex);
+});
+
 test('mobile header keeps login controls in the top row', () => {
   const mobileHeaderRule = themeCss.match(/@media \(max-width: 760px\)[\s\S]*?\.shop-header-main\s*{([^}]*)}/)?.[1] || '';
 

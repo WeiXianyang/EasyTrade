@@ -62,3 +62,23 @@ test('login page lets course demo users choose customer or administrator identit
   assert.match(loginPage, /loginAdmin/);
   assert.match(loginPage, /admin\/admin123|admin123/);
 });
+
+test('admin identity login hands off a password-free session to the admin entry', () => {
+  const loginPage = readSource('src/pages/LoginPage.jsx');
+  const adminLoginPage = readSource('src/pages/admin/AdminLoginPage.jsx');
+  const appProvider = readSource('src/contexts/AppProvider.jsx');
+
+  const handoffSnippet = loginPage.match(/adminHandoff[\s\S]*?window\.location\.href/)?.[0] || '';
+
+  assert.match(loginPage, /#\/login\?handoff=/);
+  assert.match(handoffSnippet, /id:\s*admin\.id/);
+  assert.match(handoffSnippet, /username:\s*admin\.username/);
+  assert.match(handoffSnippet, /role:\s*admin\.role/);
+  assert.match(handoffSnippet, /name:\s*admin\.name/);
+  assert.doesNotMatch(handoffSnippet, /password/);
+  assert.match(adminLoginPage, /useSearchParams/);
+  assert.match(adminLoginPage, /handoff/);
+  assert.match(adminLoginPage, /acceptAdminHandoff/);
+  assert.match(adminLoginPage, /admin|operator/);
+  assert.match(appProvider, /acceptAdminHandoff/);
+});

@@ -69,6 +69,12 @@ export function AppProvider({ children }) {
     setVersion((v) => v + 1);
     return admin;
   }, []);
+  const acceptAdminHandoff = useCallback((admin) => {
+    const acceptedAdmin = authService.setCurrentAdmin(admin);
+    setCurrentAdmin(acceptedAdmin);
+    setVersion((v) => v + 1);
+    return acceptedAdmin;
+  }, []);
   const logoutAdmin = useCallback(() => {
     authService.logoutAdmin();
     setCurrentAdmin(null);
@@ -93,8 +99,9 @@ export function AppProvider({ children }) {
     registerUser,
     logoutUser,
     loginAdmin,
+    acceptAdminHandoff,
     logoutAdmin,
-  }), [currentUser, currentAdmin, cartCount, cartItems, cartSummary, cartDrawerOpen, version, theme, toggleTheme, refresh, openCart, closeCart, loginUser, registerUser, logoutUser, loginAdmin, logoutAdmin]);
+  }), [currentUser, currentAdmin, cartCount, cartItems, cartSummary, cartDrawerOpen, version, theme, toggleTheme, refresh, openCart, closeCart, loginUser, registerUser, logoutUser, loginAdmin, acceptAdminHandoff, logoutAdmin]);
 
   const antdTheme = theme === 'dark' ? darkTheme : lightTheme;
 

@@ -20,8 +20,8 @@ import LogoutBtn from '../components/shop/LogoutBtn.jsx';
 
 const navItems = [
   { key: '/', to: '/', icon: <HomeOutlined />, label: '首页' },
-  { key: '/category', to: '/category', icon: <AppstoreOutlined />, label: '分类' },
   { key: '/cart', to: '/cart', icon: <ShoppingCartOutlined />, label: '购物车', badge: true },
+  { key: '/category', to: '/category', icon: <AppstoreOutlined />, label: '分类' },
   { key: '/me', to: '/me', icon: <UserOutlined />, label: '我的' },
 ];
 

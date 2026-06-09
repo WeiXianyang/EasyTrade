@@ -99,6 +99,19 @@ export function createAuthService(storage = storageService) {
       storage.write(storage.keys.currentAdmin, safeAdmin);
       return safeAdmin;
     },
+    setCurrentAdmin(admin) {
+      if (!admin?.id || !admin?.username || !['admin', 'operator'].includes(admin.role)) {
+        throw new Error('无效的后台身份');
+      }
+      const safeAdmin = withoutPassword({
+        id: admin.id,
+        username: admin.username,
+        role: admin.role,
+        name: admin.name || admin.username,
+      });
+      storage.write(storage.keys.currentAdmin, safeAdmin);
+      return safeAdmin;
+    },
     getCurrentAdmin() {
       return getCachedSession(storage.keys.currentAdmin, ['admin', 'operator']);
     },

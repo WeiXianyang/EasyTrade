@@ -121,6 +121,30 @@ test('auth and permission services enforce frontend and admin roles', () => {
   assert.equal(permissionService.canAccess('operator', 'orders'), true);
 });
 
+test('auth service accepts password-free admin handoff sessions only for admin roles', () => {
+  const storage = createStorageService(createMemoryStorage());
+  const { authService } = createServicesWithStorage(storage);
+  const adminHandoff = {
+    id: 'a-admin',
+    username: 'admin',
+    role: 'admin',
+    name: '系统管理员',
+    password: 'should-not-persist',
+  };
+
+  assert.equal(typeof authService.setCurrentAdmin, 'function');
+
+  const accepted = authService.setCurrentAdmin(adminHandoff);
+  assert.equal(accepted.id, adminHandoff.id);
+  assert.equal(accepted.role, 'admin');
+  assert.equal('password' in accepted, false);
+  assert.deepEqual(storage.read(storage.keys.currentAdmin, null), accepted);
+  assert.throws(
+    () => authService.setCurrentAdmin({ id: 'u-demo', username: 'buyer', role: 'customer', name: '校园买手' }),
+    /无效的后台身份/,
+  );
+});
+
 test('auth service reuses valid cached sessions and clears stale cached users', () => {
   const storage = createStorageService(createMemoryStorage());
   const { authService } = createServicesWithStorage(storage);
