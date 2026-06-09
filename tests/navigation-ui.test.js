@@ -101,3 +101,15 @@ test('smart support uses environment config and local product fallback', () => {
   assert.match(envExample, /VITE_CUSTOM_HOST=/);
   assert.doesNotMatch(envExample, /sk-/);
 });
+
+test('category page exposes price, sales, discount, and stock filters', () => {
+  const categoryPage = readSource('src/pages/CategoryPage.jsx');
+
+  assert.match(categoryPage, /sortMode/);
+  assert.match(categoryPage, /price-asc/);
+  assert.match(categoryPage, /price-desc/);
+  assert.match(categoryPage, /sold-desc/);
+  assert.match(categoryPage, /discount-desc/);
+  assert.match(categoryPage, /onlyDiscount/);
+  assert.match(categoryPage, /inStockOnly/);
+});

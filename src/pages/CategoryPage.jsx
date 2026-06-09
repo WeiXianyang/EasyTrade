@@ -1,4 +1,5 @@
-import { Button, Col, Empty, Row, Space } from 'antd';
+import { FilterOutlined } from '@ant-design/icons';
+import { Button, Checkbox, Col, Empty, Row, Select, Space } from 'antd';
 import { useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
@@ -13,15 +14,34 @@ export default function CategoryPage() {
   const categories = categoryService.getCategories();
   const [searchParams] = useSearchParams();
   const [categoryId, setCategoryId] = useState(() => searchParams.get('cat') || 'all');
-  const products = useMemo(
-    () =>
-      productService.getVisibleProducts({
-        categoryId: categoryId === 'all' ? undefined : categoryId,
-      }),
-    [categoryId],
-  );
+  const [sortMode, setSortMode] = useState('default');
+  const [onlyDiscount, setOnlyDiscount] = useState(false);
+  const [inStockOnly, setInStockOnly] = useState(false);
+  const products = useMemo(() => {
+    const baseProducts = productService.getVisibleProducts({
+      categoryId: categoryId === 'all' ? undefined : categoryId,
+    });
 
-    const currentCategory = categoryId === 'all' ? null : categories.find((c) => c.id === categoryId);
+    const filtered = baseProducts.filter((product) => {
+      const discountOk = !onlyDiscount || product.originalPrice > product.price;
+      const stockOk = !inStockOnly || product.stock > 10;
+      return discountOk && stockOk;
+    });
+
+    return [...filtered].sort((a, b) => {
+      if (sortMode === 'price-asc') return a.price - b.price;
+      if (sortMode === 'price-desc') return b.price - a.price;
+      if (sortMode === 'sold-desc') return b.sold - a.sold;
+      if (sortMode === 'discount-desc') {
+        const discountA = a.originalPrice - a.price;
+        const discountB = b.originalPrice - b.price;
+        return discountB - discountA;
+      }
+      return 0;
+    });
+  }, [categoryId, inStockOnly, onlyDiscount, sortMode]);
+
+  const currentCategory = categoryId === 'all' ? null : categories.find((c) => c.id === categoryId);
 
   return (
     <Space orientation='vertical' size={24} style={{ width: '100%' }}>
@@ -48,12 +68,36 @@ export default function CategoryPage() {
 
       {/* 当前分类信息 */}
       <div className="category-info">
-        <span className="category-info-title">
-          {currentCategory ? currentCategory.name : '全部商品'}
-        </span>
-        <span className="category-info-count">
-          共 {products.length} 件
-        </span>
+        <Space>
+          <span className="category-info-title">
+            {currentCategory ? currentCategory.name : '全部商品'}
+          </span>
+          <span className="category-info-count">
+            共 {products.length} 件
+          </span>
+        </Space>
+        <Space wrap className="category-filter-tools">
+          <FilterOutlined />
+          <Select
+            size="small"
+            value={sortMode}
+            onChange={setSortMode}
+            style={{ width: 120 }}
+            options={[
+              { label: '默认排序', value: 'default' },
+              { label: '价格升序', value: 'price-asc' },
+              { label: '价格降序', value: 'price-desc' },
+              { label: '销量优先', value: 'sold-desc' },
+              { label: '折扣优先', value: 'discount-desc' },
+            ]}
+          />
+          <Checkbox checked={onlyDiscount} onChange={(event) => setOnlyDiscount(event.target.checked)}>
+            仅优惠
+          </Checkbox>
+          <Checkbox checked={inStockOnly} onChange={(event) => setInStockOnly(event.target.checked)}>
+            库存充足
+          </Checkbox>
+        </Space>
       </div>
       
       {/* 商品列表 / 空状态 */}
@@ -66,7 +110,18 @@ export default function CategoryPage() {
                 : `「${currentCategory?.name}」分类暂无在售商品`
             }
           >
-            <Button onClick={() => navigate('/')}>返回首页</Button>
+            <Space>
+              <Button onClick={() => navigate('/')}>返回首页</Button>
+              <Button
+                onClick={() => {
+                  setSortMode('default');
+                  setOnlyDiscount(false);
+                  setInStockOnly(false);
+                }}
+              >
+                清除筛选
+              </Button>
+            </Space>
           </Empty>
         </div>
       ) : (

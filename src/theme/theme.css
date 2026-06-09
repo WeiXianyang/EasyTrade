@@ -511,6 +511,15 @@ a {
   color: var(--color-text-placeholder);
 }
 
+.category-filter-tools {
+  justify-content: flex-end;
+}
+
+.category-filter-tools .ant-checkbox-wrapper {
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
 .category-empty {
   padding: 60px 0;
 }
@@ -743,6 +752,17 @@ a {
   .section-head {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .category-info {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .category-filter-tools {
+    justify-content: flex-start;
+    width: 100%;
   }
 
   .admin-content {
