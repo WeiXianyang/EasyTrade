@@ -7,6 +7,11 @@ import ProductCard from '../components/shop/ProductCard.jsx';
 import { useAddToCart } from '../hooks/useAddToCart.js';
 import categoryService from '../services/categoryService.js';
 import productService from '../services/productService.js';
+import {
+  filterAndSortCategoryProducts,
+  getCategoryEmptyState,
+  getCategoryPath,
+} from './categoryPageUtils.js';
 
 export default function CategoryPage() {
   const navigate = useNavigate();
@@ -31,36 +36,19 @@ export default function CategoryPage() {
     },
     [categoryId, isUnknownCategory],
   );
-  const products = useMemo(() => {
-    const filtered = baseProducts.filter((product) => {
-      const discountOk = !onlyDiscount || product.originalPrice > product.price;
-      const stockOk = !inStockOnly || product.stock > 10;
-      return discountOk && stockOk;
-    });
-
-    return [...filtered].sort((a, b) => {
-      if (sortMode === 'price-asc') return a.price - b.price;
-      if (sortMode === 'price-desc') return b.price - a.price;
-      if (sortMode === 'sold-desc') return b.sold - a.sold;
-      if (sortMode === 'discount-desc') {
-        const discountA = a.originalPrice - a.price;
-        const discountB = b.originalPrice - b.price;
-        return discountB - discountA;
-      }
-      return 0;
-    });
-  }, [baseProducts, inStockOnly, onlyDiscount, sortMode]);
+  const products = useMemo(
+    () => filterAndSortCategoryProducts(baseProducts, { sortMode, onlyDiscount, inStockOnly }),
+    [baseProducts, inStockOnly, onlyDiscount, sortMode],
+  );
 
   const currentCategory = categoryId === 'all' ? null : categories.find((c) => c.id === categoryId);
   const categoryTitle = isUnknownCategory ? '未知分类' : currentCategory ? currentCategory.name : '全部商品';
-  const hasBaseProducts = baseProducts.length > 0;
-  const emptyDescription = hasBaseProducts
-    ? '当前筛选暂无结果'
-    : isUnknownCategory
-      ? '未找到该分类'
-      : categoryId === 'all'
-      ? '暂无在售商品，请稍后再来'
-      : `「${currentCategory?.name}」分类暂无在售商品`;
+  const { description: emptyDescription, canClearFilters } = getCategoryEmptyState({
+    hasBaseProducts: baseProducts.length > 0,
+    isUnknownCategory,
+    categoryId,
+    currentCategoryName: currentCategory?.name,
+  });
 
   return (
     <Space orientation='vertical' size={24} style={{ width: '100%' }}>
@@ -70,7 +58,7 @@ export default function CategoryPage() {
           <button
             type="button"
             className={`category-tab${categoryId === 'all' ? ' active' : ''}`}
-            onClick={() => navigate('/category')}
+            onClick={() => navigate(getCategoryPath('all'))}
           >
             所有商品
           </button>
@@ -79,7 +67,7 @@ export default function CategoryPage() {
               type="button"
               key={cat.id}
               className={`category-tab${categoryId === cat.id ? ' active' : ''}`}
-              onClick={() => navigate(`/category/${cat.id}`)}
+              onClick={() => navigate(getCategoryPath(cat.id))}
             >
               {cat.name}
             </button>
@@ -127,7 +115,7 @@ export default function CategoryPage() {
           <Empty description={emptyDescription}>
             <Space>
               <Button onClick={() => navigate('/')}>返回首页</Button>
-              {hasBaseProducts && (
+              {canClearFilters && (
                 <Button
                   onClick={() => {
                     setSortMode('default');

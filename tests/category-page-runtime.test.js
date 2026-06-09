@@ -1,14 +1,11 @@
 import test, { after, before, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
 import { createServer } from 'vite';
 import React from 'react';
 import { renderToString } from 'react-dom/server';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 
-function readSource(path) {
-  return readFileSync(new URL(`../${path}`, import.meta.url), 'utf8');
-}
+import { getCategoryPath } from '../src/pages/categoryPageUtils.js';
 
 function createMemoryStorage() {
   const data = new Map();
@@ -104,9 +101,8 @@ test('category page falls back safely for unknown category ids at runtime', () =
 
 test('category tabs are accessible buttons and navigate through category URLs', () => {
   const html = renderCategoryPage('/category');
-  const categoryPage = readSource('src/pages/CategoryPage.jsx');
 
   assert.match(html, /<button[^>]+type="button"[^>]+class="category-tab active"/);
-  assert.match(categoryPage, /navigate\('\/category'\)/);
-  assert.match(categoryPage, /navigate\(`\/category\/\$\{cat\.id\}`\)/);
+  assert.equal(getCategoryPath('all'), '/category');
+  assert.equal(getCategoryPath('digital'), '/category/digital');
 });

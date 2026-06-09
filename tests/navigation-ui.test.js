@@ -116,12 +116,14 @@ test('category page exposes price, sales, discount, and stock filters', () => {
 
 test('category empty state distinguishes no products from no filter results', () => {
   const categoryPage = readSource('src/pages/CategoryPage.jsx');
+  const categoryPageUtils = readSource('src/pages/categoryPageUtils.js');
 
   assert.match(categoryPage, /baseProducts/);
-  assert.match(categoryPage, /hasBaseProducts/);
-  assert.match(categoryPage, /当前筛选暂无结果/);
-  assert.match(categoryPage, /暂无在售商品，请稍后再来/);
-  assert.match(categoryPage, /分类暂无在售商品/);
+  assert.match(categoryPage, /getCategoryEmptyState/);
+  assert.match(categoryPageUtils, /hasBaseProducts/);
+  assert.match(categoryPageUtils, /当前筛选暂无结果/);
+  assert.match(categoryPageUtils, /暂无在售商品，请稍后再来/);
+  assert.match(categoryPageUtils, /分类暂无在售商品/);
 });
 
 test('category page accepts path category id before query category id', () => {
@@ -139,7 +141,7 @@ test('category empty state only offers clear filters for filtered-out results', 
 
   const emptySnippet = categoryPage.match(/<Empty description=\{emptyDescription\}>[\s\S]*?<\/Empty>/)?.[0] || '';
 
-  assert.match(emptySnippet, /\{hasBaseProducts && \(/);
+  assert.match(emptySnippet, /\{canClearFilters && \(/);
   assert.match(emptySnippet, /清除筛选/);
   assert.match(emptySnippet, /返回首页/);
 });
