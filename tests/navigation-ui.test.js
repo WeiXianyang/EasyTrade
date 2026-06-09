@@ -232,3 +232,35 @@ test('motion-heavy storefront effects are reduced for prefers-reduced-motion use
   assert.match(reducedMotionBlock, /animation:\s*none/);
   assert.match(reducedMotionBlock, /transform:\s*none/);
 });
+
+test('product detail page records footprints and exposes a persistent favorite toggle', () => {
+  const productDetailPage = readSource('src/pages/ProductDetailPage.jsx');
+
+  assert.match(productDetailPage, /userActivityService/);
+  assert.match(productDetailPage, /useEffect/);
+  assert.match(productDetailPage, /recordFootprint\(currentUser\.id,\s*product\.id\)/);
+  assert.match(productDetailPage, /isFavorite\(currentUser\.id,\s*product\.id\)/);
+  assert.match(productDetailPage, /toggleFavorite\(currentUser\.id,\s*product\.id\)/);
+  assert.match(productDetailPage, /已收藏/);
+  assert.match(productDetailPage, /收藏/);
+});
+
+test('me page shows favorite, follow, and footprint windows with product and category navigation', () => {
+  const mePage = readSource('src/pages/MePage.jsx');
+  const mePageCss = readSource('src/pages/MePage.css');
+
+  assert.match(mePage, /userActivityService/);
+  assert.match(mePage, /productService/);
+  assert.match(mePage, /categoryService/);
+  assert.match(mePage, /我的收藏/);
+  assert.match(mePage, /我的关注/);
+  assert.match(mePage, /浏览足迹/);
+  assert.match(mePage, /getFavorites\(currentUser\.id/);
+  assert.match(mePage, /getCategoryFollows\(currentUser\.id/);
+  assert.match(mePage, /getFootprints\(currentUser\.id/);
+  assert.match(mePage, /navigate\(`\/detail\/\$\{product\.id\}`\)/);
+  assert.match(mePage, /navigate\(`\/category\/\$\{category\.id\}`\)/);
+  assert.match(mePage, /toggleCategoryFollow\(currentUser\.id,\s*category\.id\)/);
+  assert.match(mePageCss, /activity-grid/);
+  assert.match(mePageCss, /activity-card/);
+});

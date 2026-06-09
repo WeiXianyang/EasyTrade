@@ -1,6 +1,6 @@
 import { App, Button, Col, Descriptions, Empty, Image, InputNumber, Row, Space, Tag, Typography } from 'antd';
-import { ShoppingCartOutlined } from '@ant-design/icons';
-import { useCallback, useState } from 'react';
+import { HeartFilled, HeartOutlined, ShoppingCartOutlined } from '@ant-design/icons';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import PriceText from '../components/shop/PriceText.jsx';
@@ -9,6 +9,7 @@ import cartService from '../services/cartService.js';
 import categoryService from '../services/categoryService.js';
 import mockApiService from '../services/mockApiService.js';
 import productService from '../services/productService.js';
+import userActivityService from '../services/userActivityService.js';
 
 export default function ProductDetailPage() {
   const { productId } = useParams();
@@ -19,6 +20,15 @@ export default function ProductDetailPage() {
   const product = productService.getProductById(productId);
   const category = product ? categoryService.getCategoryById(product.categoryId) : null;
   const canBuy = product ? product.status === 'on' && product.stock > 0 : false;
+  const [isFavorite, setIsFavorite] = useState(() => (
+    currentUser && product ? userActivityService.isFavorite(currentUser.id, product.id) : false
+  ));
+
+  useEffect(() => {
+    if (!currentUser || !product) return;
+    userActivityService.recordFootprint(currentUser.id, product.id);
+    setIsFavorite(userActivityService.isFavorite(currentUser.id, product.id));
+  }, [currentUser, product]);
 
   const ensureLogin = useCallback(() => {
     if (!currentUser) {
@@ -51,6 +61,15 @@ export default function ProductDetailPage() {
     if (!ensureLogin()) return;
     navigate(`/checkout?buyNow=${product.id}&quantity=${quantity}`);
   }, [ensureLogin, navigate, product, quantity]);
+
+  const toggleFavorite = useCallback(() => {
+    if (!product) return;
+    if (!ensureLogin()) return;
+    const result = userActivityService.toggleFavorite(currentUser.id, product.id);
+    setIsFavorite(result.favorited);
+    refresh();
+    message.success(result.favorited ? '已加入收藏' : '已取消收藏');
+  }, [currentUser, ensureLogin, message, product, refresh]);
 
   if (!product) {
     return <Empty description="商品不存在" />;
@@ -88,6 +107,9 @@ export default function ProductDetailPage() {
             </Descriptions>
             <Space wrap>
               <InputNumber min={1} max={Math.max(1, product.stock)} value={quantity} onChange={(value) => setQuantity(value || 1)} />
+              <Button icon={isFavorite ? <HeartFilled /> : <HeartOutlined />} onClick={toggleFavorite}>
+                {isFavorite ? '已收藏' : '收藏'}
+              </Button>
               <Button icon={<ShoppingCartOutlined />} disabled={!canBuy} onClick={addCart}>
                 加入购物车
               </Button>

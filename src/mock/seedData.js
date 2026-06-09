@@ -16,6 +16,9 @@ export const STORAGE_KEYS = {
   rolePermissions: 'easytrade.rolePermissions',
   requestLogs: 'easytrade.requestLogs',
   auditLogs: 'easytrade.auditLogs',
+  favorites: 'easytrade.favorites',
+  follows: 'easytrade.follows',
+  footprints: 'easytrade.footprints',
 };
 
 export const adminModules = [
