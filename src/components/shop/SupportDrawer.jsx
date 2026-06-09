@@ -58,7 +58,7 @@ export default function SupportDrawer({ open, onClose }) {
   return (
     <Drawer title="智能客服" placement="right" open={open} onClose={onClose} size="default">
       <Flex vertical gap={16} className="support-drawer">
-        <div className="support-messages" aria-live="polite">
+        <div className="support-messages" role="log" aria-label="智能客服对话记录" aria-live="polite">
           {messages.map((item) => (
             <div key={item.id} className={`support-message support-message-${item.role}`}>
               <Typography.Paragraph className="support-message-content">{item.content}</Typography.Paragraph>

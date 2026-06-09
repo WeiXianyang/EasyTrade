@@ -93,8 +93,11 @@ test('smart support uses environment config and local product fallback', () => {
   assert.match(chatService, /VITE_CUSTOM_KEY/);
   assert.match(chatService, /VITE_CUSTOM_MODEL/);
   assert.match(chatService, /recommendProducts/);
+  assert.match(chatService, /createChatService/);
+  assert.doesNotMatch(chatService, /__EASYTRADE_CHAT_ENV__/);
   assert.match(supportDrawer, /商品推荐/);
   assert.match(supportDrawer, /\/detail\//);
+  assert.match(supportDrawer, /role="log"/);
   assert.match(envExample, /VITE_CUSTOM_HOST=/);
   assert.doesNotMatch(envExample, /sk-/);
 });

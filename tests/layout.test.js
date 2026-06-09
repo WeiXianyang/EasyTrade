@@ -10,9 +10,14 @@ test('shop layout exposes cart in bottom navigation and support in the floating 
   assert.match(shopLayout, /label:\s*['"]购物车['"]/);
   assert.match(shopLayout, /FloatingSupportBtn/);
   assert.match(shopLayout, /SupportDrawer/);
+  assert.match(shopLayout, /shop-floating-support/);
+  assert.doesNotMatch(shopLayout, /shop-floating-cart-badge/);
   assert.doesNotMatch(shopLayout, /label:\s*['"]后台['"]/);
   assert.match(themeCss, /\.shop-bottom-nav[\s\S]*position:\s*fixed/);
   assert.match(themeCss, /\.shop-bottom-nav[\s\S]*bottom:\s*0/);
+  assert.match(themeCss, /\.shop-floating-support[\s\S]*position:\s*fixed/);
+  assert.doesNotMatch(themeCss, /\.shop-floating-cart-badge/);
+  assert.doesNotMatch(themeCss, /\.shop-floating-cart\s*{/);
 });
 
 test('shop bottom navigation keeps the required course demo order', () => {

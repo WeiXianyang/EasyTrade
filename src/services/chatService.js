@@ -2,9 +2,15 @@ import productService from './productService.js';
 
 const DEFAULT_MODEL = 'gpt-4o-mini';
 
-function envValue(key) {
-  const testEnvValue = globalThis.__EASYTRADE_CHAT_ENV__?.[key];
-  return String(testEnvValue ?? import.meta.env?.[key] ?? '').trim();
+function defaultEnvValue(key) {
+  return import.meta.env?.[key];
+}
+
+function envValue(env, key) {
+  if (typeof env === 'function') {
+    return String(env(key) ?? '').trim();
+  }
+  return String(env?.[key] ?? '').trim();
 }
 
 function normalizeText(value) {
@@ -59,9 +65,8 @@ function extractAnswer(data) {
   return String(data?.choices?.[0]?.message?.content || '').trim();
 }
 
-export function recommendProducts(question, limit = 3) {
+function scoreProducts(products, question, limit = 3) {
   const safeLimit = Math.max(1, Number(limit) || 3);
-  const products = productService.getVisibleProducts();
   const visibleProducts = Array.isArray(products) ? products : [];
   const tokens = tokenize(question);
   const query = normalizeText(question);
@@ -84,70 +89,94 @@ export function recommendProducts(question, limit = 3) {
     .map(({ product }) => product);
 }
 
-export async function askSupport(question) {
-  const text = String(question || '').trim();
-  const products = recommendProducts(text);
-  const host = envValue('VITE_CUSTOM_HOST').replace(/\/+$/, '');
-  const key = envValue('VITE_CUSTOM_KEY');
-  const model = envValue('VITE_CUSTOM_MODEL') || DEFAULT_MODEL;
+function normalizeProductSource(products) {
+  if (Array.isArray(products)) return products;
+  if (typeof products === 'function') return products();
+  return productService.getVisibleProducts();
+}
 
-  if (!host || !key) {
-    return {
-      answer: localAnswer(text || '商品咨询', products),
-      products,
-      source: 'local',
-    };
+export function createChatService({ env = defaultEnvValue, fetchImpl = globalThis.fetch, products } = {}) {
+  function recommendProducts(question, limit = 3) {
+    return scoreProducts(normalizeProductSource(products), question, limit);
   }
 
-  try {
-    const response = await fetch(`${host}/chat/completions`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${key}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model,
-        messages: [
-          {
-            role: 'system',
-            content:
-              '你是 EasyTrade 商城的智能客服。请用简洁中文回答用户问题，只推荐提供的上架商品，不编造库存、价格或链接。',
-          },
-          {
-            role: 'user',
-            content: `用户问题：${text}\n\n可推荐商品：\n${getProductContext(products)}`,
-          },
-        ],
-        temperature: 0.3,
-      }),
-    });
+  async function askSupport(question) {
+    const text = String(question || '').trim();
+    const recommendedProducts = recommendProducts(text);
+    const host = envValue(env, 'VITE_CUSTOM_HOST').replace(/\/+$/, '');
+    const key = envValue(env, 'VITE_CUSTOM_KEY');
+    const model = envValue(env, 'VITE_CUSTOM_MODEL') || DEFAULT_MODEL;
 
-    if (!response.ok) {
+    if (!host || !key || typeof fetchImpl !== 'function') {
       return {
-        answer: localAnswer(text || '商品咨询', products),
-        products,
+        answer: localAnswer(text || '商品咨询', recommendedProducts),
+        products: recommendedProducts,
         source: 'local',
       };
     }
 
-    const data = await response.json();
-    const answer = extractAnswer(data);
-    return {
-      answer: answer || localAnswer(text || '商品咨询', products),
-      products,
-      source: answer ? 'remote' : 'local',
-    };
-  } catch {
-    return {
-      answer: localAnswer(text || '商品咨询', products),
-      products,
-      source: 'local',
-    };
+    try {
+      const response = await fetchImpl(`${host}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${key}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model,
+          messages: [
+            {
+              role: 'system',
+              content:
+                '你是 EasyTrade 商城的智能客服。请用简洁中文回答用户问题，只推荐提供的上架商品，不编造库存、价格或链接。',
+            },
+            {
+              role: 'user',
+              content: `用户问题：${text}\n\n可推荐商品：\n${getProductContext(recommendedProducts)}`,
+            },
+          ],
+          temperature: 0.3,
+        }),
+      });
+
+      if (!response.ok) {
+        return {
+          answer: localAnswer(text || '商品咨询', recommendedProducts),
+          products: recommendedProducts,
+          source: 'local',
+        };
+      }
+
+      const data = await response.json();
+      const answer = extractAnswer(data);
+      return {
+        answer: answer || localAnswer(text || '商品咨询', recommendedProducts),
+        products: recommendedProducts,
+        source: answer ? 'remote' : 'local',
+      };
+    } catch {
+      return {
+        answer: localAnswer(text || '商品咨询', recommendedProducts),
+        products: recommendedProducts,
+        source: 'local',
+      };
+    }
   }
+
+  return {
+    askSupport,
+    recommendProducts,
+  };
 }
 
-export default {
-  askSupport,
-  recommendProducts,
-};
+const chatService = createChatService();
+
+export function recommendProducts(question, limit = 3) {
+  return chatService.recommendProducts(question, limit);
+}
+
+export function askSupport(question) {
+  return chatService.askSupport(question);
+}
+
+export default chatService;
