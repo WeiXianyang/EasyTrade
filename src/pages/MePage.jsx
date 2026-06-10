@@ -64,7 +64,7 @@ export default function MePage() {
   );
 
   return (
-    <Row gutter={[18, 18]}>
+    <Row gutter={[18, 18]} className="me-page">
       {/* 左侧：翻转卡片 */}
       <Col xs={24} lg={7}>
         <div className="flip-card">

@@ -299,11 +299,178 @@
 }
 
 @media (max-width: 760px) {
+  .me-page {
+    margin: 0 !important;
+  }
+
+  .flip-card {
+    height: auto;
+    perspective: none;
+  }
+
+  .flip-card-inner {
+    display: grid;
+    gap: 12px;
+    height: auto;
+    transform: none !important;
+    transform-style: flat;
+  }
+
+  .flip-card:hover .flip-card-inner {
+    transform: none;
+  }
+
+  .flip-card-front,
+  .flip-card-back {
+    position: relative;
+    height: auto;
+    min-height: 0;
+    padding: 18px;
+    border-radius: 8px;
+    backface-visibility: visible;
+  }
+
+  .flip-card-front {
+    min-height: 150px;
+  }
+
+  .flip-card-back {
+    transform: none;
+  }
+
+  .flip-card-avatar {
+    width: 56px;
+    height: 56px;
+    margin-bottom: 10px;
+    font-size: 23px;
+  }
+
+  .flip-card-name {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    font-size: 18px;
+  }
+
+  .flip-card-role,
+  .flip-card-info-value {
+    overflow-wrap: anywhere;
+  }
+
+  .flip-hint {
+    display: none;
+  }
+
+  .flip-card-back-title {
+    margin-bottom: 10px;
+  }
+
+  .flip-card-info-row {
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .flip-card-info-label {
+    flex: 0 0 auto;
+  }
+
+  .flip-card-info-value {
+    min-width: 0;
+    text-align: right;
+  }
+
+  .me-orders-card,
+  .activity-card {
+    border-radius: 8px;
+  }
+
+  .me-orders-card .ant-card-head,
+  .activity-card .ant-card-head {
+    min-height: 44px;
+    padding: 0 14px;
+  }
+
+  .me-orders-card .ant-card-body {
+    padding: 6px 12px 12px;
+  }
+
+  .me-orders-card .ant-list-item {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 10px 0 !important;
+  }
+
+  .me-orders-card .ant-list-item .ant-list-item-meta {
+    min-width: 0;
+    flex: 1 1 100%;
+  }
+
+  .me-orders-card .ant-list-item-meta-description {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    white-space: normal;
+  }
+
+  .me-orders-card .ant-list-item-action {
+    margin-left: 0;
+  }
+
   .activity-card .ant-card-body {
     padding: 8px 12px 12px;
   }
 
   .activity-list-item {
     align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .activity-list-item .ant-list-item-meta {
+    flex: 1 1 calc(100% - 64px);
+  }
+
+  .activity-list-item .ant-list-item-action {
+    margin-left: 0;
+  }
+
+  .follow-suggestions .ant-btn {
+    flex: 1 1 96px;
+  }
+}
+
+@media (max-width: 480px) {
+  .flip-card-front,
+  .flip-card-back {
+    padding: 16px;
+  }
+
+  .flip-card-info-row {
+    display: grid;
+    grid-template-columns: 56px minmax(0, 1fr);
+  }
+
+  .flip-card-info-value {
+    text-align: left;
+  }
+
+  .me-orders-card .ant-card-extra,
+  .activity-card .ant-card-extra {
+    margin-left: 8px;
+  }
+
+  .activity-list-item .ant-list-item-action {
+    width: 100%;
+  }
+
+  .activity-list-item .ant-list-item-action > li {
+    width: 100%;
+    padding: 0 !important;
+  }
+
+  .activity-list-item .ant-list-item-action .ant-btn {
+    width: 100%;
+    text-align: left;
   }
 }

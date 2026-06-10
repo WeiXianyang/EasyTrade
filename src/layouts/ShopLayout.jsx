@@ -131,10 +131,10 @@ export default function ShopLayout() {
             {item.icon}
             {item.badge ? (
               <Badge count={cartCount} size="small">
-                <span>{item.label}</span>
+                <span className="shop-bottom-nav-label">{item.label}</span>
               </Badge>
             ) : (
-              <span>{item.label}</span>
+              <span className="shop-bottom-nav-label">{item.label}</span>
             )}
           </Link>
         ))}
@@ -144,6 +144,7 @@ export default function ShopLayout() {
       </div>
       <SupportDrawer open={supportOpen} onClose={() => setSupportOpen(false)} />
       <Drawer
+        className="cart-drawer"
         title="购物车"
         open={cartDrawerOpen}
         onClose={closeCart}
@@ -152,7 +153,7 @@ export default function ShopLayout() {
           currentUser && cartItems.length > 0 ? (
             <div className="cart-drawer-footer">
               <div>
-                <Typography.Text className="muted">已选 {cartSummary.count} 件</Typography.Text>
+                <Typography.Text className="muted cart-summary-text">已选 {cartSummary.count} 件</Typography.Text>
                 <Typography.Title level={4} className="cart-total-price">
                   {formatCurrency(cartSummary.total)}
                 </Typography.Title>
@@ -217,10 +218,11 @@ export default function ShopLayout() {
                 />
                 <Image width={56} height={42} src={item.product.image} alt={item.product.name} style={{ objectFit: 'cover', borderRadius: 8 }} />
                 <Flex vertical flex={1} gap={4}>
-                  <Typography.Text ellipsis>{item.product.name}</Typography.Text>
-                  <Typography.Text className="price">{formatCurrency(item.product.price)}</Typography.Text>
+                  <Typography.Text className="cart-drawer-name" ellipsis>{item.product.name}</Typography.Text>
+                  <Typography.Text className="price cart-drawer-price">{formatCurrency(item.product.price)}</Typography.Text>
                   <Flex align="center" gap={8}>
                     <InputNumber
+                      className="cart-drawer-qty"
                       min={1}
                       max={item.product.stock}
                       value={item.quantity}

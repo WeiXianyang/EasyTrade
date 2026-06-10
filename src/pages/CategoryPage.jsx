@@ -1,5 +1,5 @@
 import { FilterOutlined } from '@ant-design/icons';
-import { Button, Checkbox, Col, Empty, Row, Select, Space } from 'antd';
+import { Button, Checkbox, Empty, Select, Space } from 'antd';
 import { useMemo, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
@@ -130,13 +130,13 @@ export default function CategoryPage() {
           </Empty>
         </div>
       ) : (
-        <Row gutter={[16, 16]}>
+        <div className="category-product-grid">
           {products.map((product) => (
-            <Col key={product.id} xs={24} sm={12} lg={6}>
+            <div key={product.id} className="category-product-item">
               <ProductCard product={product} onAddCart={handleAddCart} />
-            </Col>
+            </div>
           ))}
-        </Row>
+        </div>
       )}
 
     </Space>

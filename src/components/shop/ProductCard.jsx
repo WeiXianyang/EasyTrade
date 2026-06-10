@@ -54,7 +54,7 @@ const ProductCard = memo(function ProductCard({ product, onAddCart, rank, showSo
       {/* 底部 */}
       <div className="product-new-card-footer">
         <span className="product-new-card-price">
-          <PriceText price={product.price} originalPrice={product.originalPrice} />
+          <PriceText price={product.price} originalPrice={product.originalPrice} size="small" />
         </span>
         <button
           type="button"
