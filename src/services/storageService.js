@@ -9,6 +9,9 @@ const seedByKey = {
   [STORAGE_KEYS.rolePermissions]: seedRolePermissions,
   [STORAGE_KEYS.requestLogs]: [],
   [STORAGE_KEYS.auditLogs]: [],
+  [STORAGE_KEYS.favorites]: [],
+  [STORAGE_KEYS.follows]: [],
+  [STORAGE_KEYS.footprints]: [],
 };
 
 function clone(value) {

@@ -84,6 +84,23 @@ test('cart service merges quantities, selects items, and calculates totals', () 
   assert.equal(cartService.getSelectedSummary('u-demo').total, firstProduct.price * 3);
 });
 
+test('cart service supports select all, partial selection, and clear selection', () => {
+  const { productService, cartService } = createServices();
+  const [firstProduct, secondProduct] = productService.getVisibleProducts();
+
+  cartService.addItem('u-demo', firstProduct.id, 1);
+  cartService.addItem('u-demo', secondProduct.id, 2);
+  cartService.setAllSelected('u-demo', false);
+
+  assert.equal(cartService.getSelectedSummary('u-demo').count, 0);
+
+  cartService.setSelected('u-demo', secondProduct.id, true);
+  assert.equal(cartService.getSelectedSummary('u-demo').count, 2);
+
+  cartService.setAllSelected('u-demo', true);
+  assert.equal(cartService.getSelectedSummary('u-demo').count, 3);
+});
+
 test('order service creates, pays, and ships an order from cart items', () => {
   const { productService, cartService, orderService } = createServices();
   const [product] = productService.getVisibleProducts();
@@ -119,6 +136,42 @@ test('auth and permission services enforce frontend and admin roles', () => {
   assert.equal(permissionService.canAccess(admin.role, 'products'), true);
   assert.equal(permissionService.canAccess('operator', 'products'), false);
   assert.equal(permissionService.canAccess('operator', 'orders'), true);
+});
+
+test('auth service accepts password-free admin handoff sessions only for admin roles', () => {
+  const storage = createStorageService(createMemoryStorage());
+  const { authService } = createServicesWithStorage(storage);
+  const adminHandoff = {
+    id: 'a-admin',
+    username: 'admin',
+    role: 'admin',
+    name: '系统管理员',
+    password: 'should-not-persist',
+  };
+
+  assert.equal(typeof authService.setCurrentAdmin, 'function');
+
+  const accepted = authService.setCurrentAdmin(adminHandoff);
+  assert.equal(accepted.id, adminHandoff.id);
+  assert.equal(accepted.role, 'admin');
+  assert.equal('password' in accepted, false);
+  assert.deepEqual(storage.read(storage.keys.currentAdmin, null), accepted);
+  assert.throws(
+    () => authService.setCurrentAdmin({ id: 'u-demo', username: 'buyer', role: 'customer', name: '校园买手' }),
+    /无效的后台身份/,
+  );
+  assert.throws(
+    () => authService.setCurrentAdmin({ id: 'forged', username: 'forged', role: 'admin', name: 'Fake' }),
+    /无效的后台身份/,
+  );
+  assert.throws(
+    () => authService.setCurrentAdmin({ id: 'a-admin', username: 'operator', role: 'admin', name: 'Fake' }),
+    /无效的后台身份/,
+  );
+  assert.throws(
+    () => authService.setCurrentAdmin({ id: 'a-admin', username: 'admin', role: 'operator', name: 'Fake' }),
+    /无效的后台身份/,
+  );
 });
 
 test('auth service reuses valid cached sessions and clears stale cached users', () => {

@@ -1,4 +1,4 @@
-import { App, Button, Empty, Image, InputNumber, Popconfirm, Space, Table, Typography } from 'antd';
+import { App, Button, Checkbox, Empty, Image, InputNumber, Popconfirm, Space, Table, Typography } from 'antd';
 import { DeleteOutlined, ShoppingOutlined } from '@ant-design/icons';
 import { useCallback, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -22,17 +22,33 @@ export default function CartPage() {
     return newItems;
   }, [currentUser.id]);
 
+  const updateQuantity = useCallback((productId, quantity) => {
+    if (!quantity) return;
+    cartService.updateQuantity(currentUser.id, productId, quantity);
+    reload();
+  }, [currentUser.id, reload]);
+
+  const setItemSelected = useCallback((productId, checked) => {
+    cartService.setSelected(currentUser.id, productId, checked);
+    reload();
+  }, [currentUser.id, reload]);
+
+  const removeItem = useCallback((productId) => {
+    cartService.removeItem(currentUser.id, productId);
+    reload();
+  }, [currentUser.id, reload]);
+
   // 用 useMemo 缓存 columns 定义，避免每次渲染重新创建对象数组
   const columns = useMemo(() => [
     {
       title: '商品',
       dataIndex: 'product',
       render: (product) => (
-        <Space>
+        <Space className="cart-table-product">
           <Image width={72} height={54} src={product.image} alt={product.name} style={{ objectFit: 'cover', borderRadius: 8 }} />
           <div>
-            <Typography.Text strong>{product.name}</Typography.Text>
-            <div className="muted">{product.subtitle}</div>
+            <Typography.Text strong className="cart-table-product-name">{product.name}</Typography.Text>
+            <div className="cart-table-product-subtitle">{product.subtitle}</div>
           </div>
         </Space>
       ),
@@ -50,17 +66,14 @@ export default function CartPage() {
           min={1}
           max={record.product.stock}
           value={record.quantity}
-          onChange={(value) => {
-            cartService.updateQuantity(currentUser.id, record.productId, value);
-            reload();
-          }}
+          onChange={(value) => updateQuantity(record.productId, value)}
         />
       ),
     },
     {
       title: '小计',
       width: 100,
-      render: (_, record) => <Typography.Text strong>{formatCurrency(record.subtotal)}</Typography.Text>,
+      render: (_, record) => <Typography.Text strong className="cart-table-subtotal">{formatCurrency(record.subtotal)}</Typography.Text>,
     },
     {
       title: '操作',
@@ -68,16 +81,13 @@ export default function CartPage() {
       render: (_, record) => (
         <Popconfirm
           title="删除该商品？"
-          onConfirm={() => {
-            cartService.removeItem(currentUser.id, record.productId);
-            reload();
-          }}
+          onConfirm={() => removeItem(record.productId)}
         >
           <Button danger type="text" icon={<DeleteOutlined />} />
         </Popconfirm>
       ),
     },
-  ], [currentUser.id, reload]);
+  ], [removeItem, updateQuantity]);
 
   if (items.length === 0) {
     return (
@@ -92,15 +102,16 @@ export default function CartPage() {
   const selectedRowKeys = items.filter((item) => item.selected).map((item) => item.productId);
 
   return (
-    <Space orientation="vertical" size={18} style={{ width: '100%' }}>
-      <div className="section-head">
+    <Space className="cart-page" orientation="vertical" size={18} style={{ width: '100%' }}>
+      <div className="section-head cart-page-head">
         <div>
           <Typography.Title level={2}>购物车</Typography.Title>
-          <Typography.Text className="muted">支持数量修改、删除、选择结算，刷新后购物车不丢失。</Typography.Text>
+          <Typography.Text className="muted">勾选需要购买的商品，可全选、部分选择或取消全选。</Typography.Text>
         </div>
         <Button onClick={() => navigate('/category')}>继续购物</Button>
       </div>
       <Table
+        className="cart-desktop-table"
         rowKey="productId"
         columns={columns}
         dataSource={items}
@@ -117,6 +128,47 @@ export default function CartPage() {
           },
         }}
       />
+      <div className="cart-mobile-list">
+        {items.map((item) => (
+          <article key={item.productId} className={`cart-mobile-item${item.selected ? ' selected' : ''}`}>
+            <Checkbox
+              className="cart-mobile-check"
+              aria-label={`选择 ${item.product.name}`}
+              checked={item.selected}
+              onChange={(event) => setItemSelected(item.productId, event.target.checked)}
+            />
+            <Image
+              width={86}
+              height={86}
+              src={item.product.image}
+              alt={item.product.name}
+              preview={false}
+              style={{ objectFit: 'cover', borderRadius: 8 }}
+            />
+            <div className="cart-mobile-info">
+              <Typography.Text strong className="cart-mobile-name">{item.product.name}</Typography.Text>
+              <Typography.Text className="cart-mobile-subtitle">{item.product.subtitle}</Typography.Text>
+              <div className="cart-mobile-meta">
+                <Typography.Text className="price">{formatCurrency(item.product.price)}</Typography.Text>
+                <Typography.Text className="cart-mobile-subtotal">小计 {formatCurrency(item.subtotal)}</Typography.Text>
+              </div>
+              <div className="cart-mobile-actions">
+                <InputNumber
+                  className="cart-mobile-qty"
+                  size="small"
+                  min={1}
+                  max={item.product.stock}
+                  value={item.quantity}
+                  onChange={(value) => updateQuantity(item.productId, value)}
+                />
+                <Popconfirm title="删除该商品？" onConfirm={() => removeItem(item.productId)}>
+                  <Button danger size="small" type="text" icon={<DeleteOutlined />} />
+                </Popconfirm>
+              </div>
+            </div>
+          </article>
+        ))}
+      </div>
       <div className="cart-page-footer page-card">
         <Space>
           <Button
@@ -133,11 +185,11 @@ export default function CartPage() {
               reload();
             }}
           >
-            取消选择
+            取消全选
           </Button>
         </Space>
         <Space>
-          <Typography.Text>已选 {summary.count} 件</Typography.Text>
+          <Typography.Text className="cart-summary-text">已选 {summary.count} 件</Typography.Text>
           <Typography.Title level={4} className="cart-total-price">
             {formatCurrency(summary.total)}
           </Typography.Title>

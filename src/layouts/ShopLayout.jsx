@@ -1,12 +1,12 @@
-import { Badge, Button, Drawer, Empty, Flex, Image, InputNumber, Layout, Space, Tooltip, Typography } from 'antd';
+import { Badge, Button, Checkbox, Drawer, Empty, Flex, Image, InputNumber, Layout, Space, Tooltip, Typography } from 'antd';
 import { useEffect, useReducer, useState } from 'react';
 import {
   AppstoreOutlined,
-  DashboardOutlined,
   DeleteOutlined,
   HomeOutlined,
   LoginOutlined,
   MoonOutlined,
+  ShoppingCartOutlined,
   SunOutlined,
   UserOutlined,
 } from '@ant-design/icons';
@@ -15,21 +15,21 @@ import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useApp } from '../contexts/useApp.js';
 import cartService from '../services/cartService.js';
 import { formatCurrency } from '../utils/format.js';
-import FloatingCartBtn from '../components/shop/FloatingCartBtn.jsx';
-import './ShopBottomNav.css'; 
 import LogoutBtn from '../components/shop/LogoutBtn.jsx';
+import FloatingSupportBtn from '../components/shop/FloatingSupportBtn.jsx';
+import SupportDrawer from '../components/shop/SupportDrawer.jsx';
+import './ShopBottomNav.css';
 
 const navItems = [
   { key: '/', to: '/', icon: <HomeOutlined />, label: '首页' },
+  { key: '/cart', to: '/cart', icon: <ShoppingCartOutlined />, label: '购物车', badge: true },
   { key: '/category', to: '/category', icon: <AppstoreOutlined />, label: '分类' },
   { key: '/me', to: '/me', icon: <UserOutlined />, label: '我的' },
-  { key: '/admin/login', to: '/admin/login', icon: <DashboardOutlined />, label: '后台' },
 ];
 
 function selectedKey(pathname) {
-  if (pathname.startsWith('/admin')) return '/admin/login';
   if (pathname.startsWith('/category')) return '/category';
-  if (pathname.startsWith('/cart') || pathname.startsWith('/checkout') || pathname.startsWith('/pay')) return '';
+  if (pathname.startsWith('/cart') || pathname.startsWith('/checkout') || pathname.startsWith('/pay')) return '/cart';
   if (pathname.startsWith('/me') || pathname.startsWith('/orders')) return '/me';
   return '/';
 }
@@ -38,6 +38,7 @@ export default function ShopLayout() {
   const location = useLocation();
 
   const [headerHidden, setHeaderHidden] = useState(false);
+  const [supportOpen, setSupportOpen] = useState(false);
   useEffect(()=>{
     let lastScrollY = window.scrollY;
     const handleScroll = () => {
@@ -54,7 +55,7 @@ export default function ShopLayout() {
     
   }, []);
   const navigate = useNavigate();
-  const { cartCount, cartDrawerOpen, closeCart, currentUser, logoutUser, openCart: openCartDrawer, refresh, theme, toggleTheme } = useApp();
+  const { cartCount, cartDrawerOpen, closeCart, currentUser, logoutUser, refresh, theme, toggleTheme } = useApp();
   const activeKey = selectedKey(location.pathname);
 
   // 本地 state 持有购物车快照，Drawer 打开时强制刷新
@@ -68,6 +69,9 @@ export default function ShopLayout() {
 
   const cartItems = currentUser ? cartService.getCart(currentUser.id) : [];
   const cartSummary = currentUser ? cartService.getSelectedSummary(currentUser.id) : { count: 0, total: 0 };
+  const hasSelectedCartItems = cartItems.some((item) => item.selected);
+  const allCartItemsSelected = cartItems.length > 0 && cartItems.every((item) => item.selected);
+  const partiallySelectedCartItems = hasSelectedCartItems && !allCartItemsSelected;
   void localVersion; // 消费 localVersion，使上方两行在 forceUpdate 后重新执行
 
   const updateCart = (action) => {
@@ -94,6 +98,7 @@ export default function ShopLayout() {
               {/* 主题切换按钮 */}
               <Tooltip title={theme === 'light' ? '切换暗色' : '切换亮色'}>
                 <Button
+                  className="theme-toggle-btn"
                   type="text"
                   icon={theme === 'light' ? <MoonOutlined /> : <SunOutlined />}
                   onClick={toggleTheme}
@@ -124,14 +129,22 @@ export default function ShopLayout() {
         {navItems.map((item) => (
           <Link key={item.key} className={`shop-bottom-nav-item${activeKey === item.key ? ' active' : ''}`} to={item.to}>
             {item.icon}
-            <span>{item.label}</span>
+            {item.badge ? (
+              <Badge count={cartCount} size="small">
+                <span className="shop-bottom-nav-label">{item.label}</span>
+              </Badge>
+            ) : (
+              <span className="shop-bottom-nav-label">{item.label}</span>
+            )}
           </Link>
         ))}
       </nav>
-      <Badge count={cartCount} size="small" className="shop-floating-cart-badge">
-        <FloatingCartBtn onClick={openCartDrawer} />
-      </Badge>
+      <div className="shop-floating-support">
+        <FloatingSupportBtn onClick={() => setSupportOpen(true)} />
+      </div>
+      <SupportDrawer open={supportOpen} onClose={() => setSupportOpen(false)} />
       <Drawer
+        className="cart-drawer"
         title="购物车"
         open={cartDrawerOpen}
         onClose={closeCart}
@@ -140,7 +153,7 @@ export default function ShopLayout() {
           currentUser && cartItems.length > 0 ? (
             <div className="cart-drawer-footer">
               <div>
-                <Typography.Text className="muted">已选 {cartSummary.count} 件</Typography.Text>
+                <Typography.Text className="muted cart-summary-text">已选 {cartSummary.count} 件</Typography.Text>
                 <Typography.Title level={4} className="cart-total-price">
                   {formatCurrency(cartSummary.total)}
                 </Typography.Title>
@@ -180,14 +193,36 @@ export default function ShopLayout() {
           </Empty>
         ) : (
           <div className="cart-drawer-list">
+            <Flex justify="space-between" align="center" className="cart-drawer-select-bar">
+              <Checkbox
+                checked={allCartItemsSelected}
+                indeterminate={partiallySelectedCartItems}
+                onChange={(event) => updateCart(() => cartService.setAllSelected(currentUser.id, event.target.checked))}
+              >
+                全选
+              </Checkbox>
+              <Button
+                size="small"
+                disabled={!hasSelectedCartItems}
+                onClick={() => updateCart(() => cartService.setAllSelected(currentUser.id, false))}
+              >
+                取消全选
+              </Button>
+            </Flex>
             {cartItems.map((item) => (
               <Flex key={item.productId} align="center" gap={12} className="cart-drawer-item">
+                <Checkbox
+                  aria-label={`选择 ${item.product.name}`}
+                  checked={item.selected}
+                  onChange={(event) => updateCart(() => cartService.setSelected(currentUser.id, item.productId, event.target.checked))}
+                />
                 <Image width={56} height={42} src={item.product.image} alt={item.product.name} style={{ objectFit: 'cover', borderRadius: 8 }} />
                 <Flex vertical flex={1} gap={4}>
-                  <Typography.Text ellipsis>{item.product.name}</Typography.Text>
-                  <Typography.Text className="price">{formatCurrency(item.product.price)}</Typography.Text>
+                  <Typography.Text className="cart-drawer-name" ellipsis>{item.product.name}</Typography.Text>
+                  <Typography.Text className="price cart-drawer-price">{formatCurrency(item.product.price)}</Typography.Text>
                   <Flex align="center" gap={8}>
                     <InputNumber
+                      className="cart-drawer-qty"
                       min={1}
                       max={item.product.stock}
                       value={item.quantity}

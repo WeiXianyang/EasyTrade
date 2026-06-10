@@ -98,9 +98,14 @@ const PACK_DIRS = [
 ];
 
 const PACK_FILES = [
+  '.editorconfig',
   '.gitattributes',
   '.gitignore',
+  'CONTRIBUTING.md',
+  'CHANGELOG.md',
   'README.md',
+  'docs/PROJECT_STANDARDS.md',
+  'docs/ENVIRONMENT.md',
   'metadata.json',
   'package-lock.json',
   'package.json',

@@ -1,82 +1,142 @@
-import { Button, Col, Empty, Row, Space } from 'antd';
+import { FilterOutlined } from '@ant-design/icons';
+import { Button, Checkbox, Empty, Select, Space } from 'antd';
 import { useMemo, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
 import ProductCard from '../components/shop/ProductCard.jsx';
 import { useAddToCart } from '../hooks/useAddToCart.js';
 import categoryService from '../services/categoryService.js';
 import productService from '../services/productService.js';
+import {
+  filterAndSortCategoryProducts,
+  getCategoryEmptyState,
+  getCategoryPath,
+} from './categoryPageUtils.js';
 
 export default function CategoryPage() {
   const navigate = useNavigate();
   const handleAddCart = useAddToCart();
   const categories = categoryService.getCategories();
+  const params = useParams();
   const [searchParams] = useSearchParams();
-  const [categoryId, setCategoryId] = useState(() => searchParams.get('cat') || 'all');
-  const products = useMemo(
-    () =>
-      productService.getVisibleProducts({
+  const routeCategoryId = params.categoryId || searchParams.get('cat') || 'all';
+  const isUnknownCategory =
+    routeCategoryId !== 'all' && !categories.some((category) => category.id === routeCategoryId);
+  const categoryId = routeCategoryId;
+  const [sortMode, setSortMode] = useState('default');
+  const [onlyDiscount, setOnlyDiscount] = useState(false);
+  const [inStockOnly, setInStockOnly] = useState(false);
+  const baseProducts = useMemo(
+    () => {
+      if (isUnknownCategory) return [];
+
+      return productService.getVisibleProducts({
         categoryId: categoryId === 'all' ? undefined : categoryId,
-      }),
-    [categoryId],
+      });
+    },
+    [categoryId, isUnknownCategory],
+  );
+  const products = useMemo(
+    () => filterAndSortCategoryProducts(baseProducts, { sortMode, onlyDiscount, inStockOnly }),
+    [baseProducts, inStockOnly, onlyDiscount, sortMode],
   );
 
-    const currentCategory = categoryId === 'all' ? null : categories.find((c) => c.id === categoryId);
+  const currentCategory = categoryId === 'all' ? null : categories.find((c) => c.id === categoryId);
+  const categoryTitle = isUnknownCategory ? '未知分类' : currentCategory ? currentCategory.name : '全部商品';
+  const { description: emptyDescription, canClearFilters } = getCategoryEmptyState({
+    hasBaseProducts: baseProducts.length > 0,
+    isUnknownCategory,
+    categoryId,
+    currentCategoryName: currentCategory?.name,
+  });
 
   return (
     <Space orientation='vertical' size={24} style={{ width: '100%' }}>
       {/* 横向滑动分类标签栏 */}
       <div className = 'category-tabs-wrap'>
         <div className = 'category-tabs'>
-          <div
+          <button
+            type="button"
             className={`category-tab${categoryId === 'all' ? ' active' : ''}`}
-            onClick={() => setCategoryId('all')}
+            onClick={() => navigate(getCategoryPath('all'))}
           >
             所有商品
-          </div>
+          </button>
           {categories.map((cat)=>(
-            <div
+            <button
+              type="button"
               key={cat.id}
               className={`category-tab${categoryId === cat.id ? ' active' : ''}`}
-              onClick={() => setCategoryId((prev) => (prev === cat.id ? 'all' : cat.id))}
+              onClick={() => navigate(getCategoryPath(cat.id))}
             >
               {cat.name}
-            </div>
+            </button>
           ))}
         </div>
       </div>
 
       {/* 当前分类信息 */}
       <div className="category-info">
-        <span className="category-info-title">
-          {currentCategory ? currentCategory.name : '全部商品'}
-        </span>
-        <span className="category-info-count">
-          共 {products.length} 件
-        </span>
+        <Space>
+          <span className="category-info-title">
+            {categoryTitle}
+          </span>
+          <span className="category-info-count">
+            共 {products.length} 件
+          </span>
+        </Space>
+        <Space wrap className="category-filter-tools">
+          <FilterOutlined />
+          <Select
+            size="small"
+            value={sortMode}
+            onChange={setSortMode}
+            style={{ width: 120 }}
+            options={[
+              { label: '默认排序', value: 'default' },
+              { label: '价格升序', value: 'price-asc' },
+              { label: '价格降序', value: 'price-desc' },
+              { label: '销量优先', value: 'sold-desc' },
+              { label: '折扣优先', value: 'discount-desc' },
+            ]}
+          />
+          <Checkbox checked={onlyDiscount} onChange={(event) => setOnlyDiscount(event.target.checked)}>
+            仅优惠
+          </Checkbox>
+          <Checkbox checked={inStockOnly} onChange={(event) => setInStockOnly(event.target.checked)}>
+            库存充足
+          </Checkbox>
+        </Space>
       </div>
       
       {/* 商品列表 / 空状态 */}
       {products.length === 0 ? (
         <div className="category-empty">
-          <Empty
-            description={
-              categoryId === 'all'
-                ? '暂无在售商品，请稍后再来'
-                : `「${currentCategory?.name}」分类暂无在售商品`
-            }
-          >
-            <Button onClick={() => navigate('/')}>返回首页</Button>
+          <Empty description={emptyDescription}>
+            <Space>
+              <Button onClick={() => navigate('/')}>返回首页</Button>
+              {canClearFilters && (
+                <Button
+                  onClick={() => {
+                    setSortMode('default');
+                    setOnlyDiscount(false);
+                    setInStockOnly(false);
+                  }}
+                >
+                  清除筛选
+                </Button>
+              )}
+            </Space>
           </Empty>
         </div>
       ) : (
-        <Row gutter={[16, 16]}>
+        <div className="category-product-grid">
           {products.map((product) => (
-            <Col key={product.id} xs={24} sm={12} lg={6}>
+            <div key={product.id} className="category-product-item">
               <ProductCard product={product} onAddCart={handleAddCart} />
-            </Col>
+            </div>
           ))}
-        </Row>
+        </div>
       )}
 
     </Space>

@@ -81,6 +81,13 @@ src/
 └── utils/            格式化工具
 ```
 
+## 项目规范
+
+- [协作指南](CONTRIBUTING.md)：开发流程、提交前检查和协作约定。
+- [项目规范](docs/PROJECT_STANDARDS.md)：目录职责、代码风格、服务边界、测试和课程提交要求。
+- [环境变量说明](docs/ENVIRONMENT.md)：`.env.example` 配置项和本地密钥处理。
+- [变更记录](CHANGELOG.md)：项目主要演进记录。
+
 ## 开发与验证
 
 ```bash
