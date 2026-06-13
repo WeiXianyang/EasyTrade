@@ -7,6 +7,14 @@ import { useApp } from '../contexts/useApp.js';
 import cartService from '../services/cartService.js';
 import { formatCurrency } from '../utils/format.js';
 
+function hasQuantityDraft(quantityDrafts, productId) {
+  return Object.prototype.hasOwnProperty.call(quantityDrafts, productId);
+}
+
+function isCommitableQuantity(quantity) {
+  return quantity !== null && quantity !== undefined && quantity !== '';
+}
+
 export default function CartPage() {
   const navigate = useNavigate();
   const { message } = App.useApp();
@@ -14,6 +22,7 @@ export default function CartPage() {
 
   const [items, setItems] = useState(() => cartService.getCart(currentUser.id));
   const [summary, setSummary] = useState(() => cartService.getSelectedSummary(currentUser.id));
+  const [quantityDrafts, setQuantityDrafts] = useState({});
 
   const reload = useCallback(() => {
     const newItems = cartService.getCart(currentUser.id);
@@ -22,11 +31,30 @@ export default function CartPage() {
     return newItems;
   }, [currentUser.id]);
 
-  const updateQuantity = useCallback((productId, quantity) => {
-    if (!quantity) return;
+  const resetQuantityDraft = useCallback((productId) => {
+    setQuantityDrafts((previous) => {
+      if (!hasQuantityDraft(previous, productId)) return previous;
+      const next = { ...previous };
+      delete next[productId];
+      return next;
+    });
+  }, []);
+
+  const commitQuantity = useCallback((productId, quantity) => {
+    if (!isCommitableQuantity(quantity)) return;
     cartService.updateQuantity(currentUser.id, productId, quantity);
+    resetQuantityDraft(productId);
     reload();
-  }, [currentUser.id, reload]);
+  }, [currentUser.id, reload, resetQuantityDraft]);
+
+  const updateQuantity = useCallback((productId, quantity) => {
+    setQuantityDrafts((previous) => ({ ...previous, [productId]: quantity }));
+    commitQuantity(productId, quantity);
+  }, [commitQuantity]);
+
+  const getQuantityValue = useCallback((item) => (
+    hasQuantityDraft(quantityDrafts, item.productId) ? quantityDrafts[item.productId] : item.quantity
+  ), [quantityDrafts]);
 
   const setItemSelected = useCallback((productId, checked) => {
     cartService.setSelected(currentUser.id, productId, checked);
@@ -34,9 +62,10 @@ export default function CartPage() {
   }, [currentUser.id, reload]);
 
   const removeItem = useCallback((productId) => {
+    resetQuantityDraft(productId);
     cartService.removeItem(currentUser.id, productId);
     reload();
-  }, [currentUser.id, reload]);
+  }, [currentUser.id, reload, resetQuantityDraft]);
 
   // 用 useMemo 缓存 columns 定义，避免每次渲染重新创建对象数组
   const columns = useMemo(() => [
@@ -65,8 +94,9 @@ export default function CartPage() {
         <InputNumber
           min={1}
           max={record.product.stock}
-          value={record.quantity}
+          value={getQuantityValue(record)}
           onChange={(value) => updateQuantity(record.productId, value)}
+          onBlur={() => resetQuantityDraft(record.productId)}
         />
       ),
     },
@@ -87,7 +117,7 @@ export default function CartPage() {
         </Popconfirm>
       ),
     },
-  ], [removeItem, updateQuantity]);
+  ], [getQuantityValue, removeItem, resetQuantityDraft, updateQuantity]);
 
   if (items.length === 0) {
     return (
@@ -158,8 +188,9 @@ export default function CartPage() {
                   size="small"
                   min={1}
                   max={item.product.stock}
-                  value={item.quantity}
+                  value={getQuantityValue(item)}
                   onChange={(value) => updateQuantity(item.productId, value)}
+                  onBlur={() => resetQuantityDraft(item.productId)}
                 />
                 <Popconfirm title="删除该商品？" onConfirm={() => removeItem(item.productId)}>
                   <Button danger size="small" type="text" icon={<DeleteOutlined />} />

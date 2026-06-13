@@ -155,7 +155,15 @@
   padding: 8px 16px;
 }
 
-.me-orders-card .ant-list-item {
+.me-order-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.me-order-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   padding: 10px 12px !important;
   margin: 4px 0;
   border: 1px solid transparent;
@@ -163,29 +171,41 @@
   transition: all 0.2s ease;
 }
 
-.me-orders-card .ant-list-item:hover {
+.me-order-item:hover {
   background: #fff2ef;
   border-color: #f04f3e15;
 }
 
-.me-orders-card .ant-list-item .ant-list-item-meta {
-  align-items: center;
+.me-order-icon {
+  flex: 0 0 auto;
+  color: #f04f3e;
+  font-size: 24px;
 }
 
-.me-orders-card .ant-list-item-meta-title {
+.me-order-main {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.me-order-title {
   font-size: 13px !important;
   font-weight: 600 !important;
   color: #1f2933 !important;
   margin-bottom: 2px !important;
 }
 
-.me-orders-card .ant-list-item-meta-description {
+.me-order-description {
+  overflow: hidden;
   font-size: 12px !important;
   color: #94a3b8 !important;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.me-orders-card .ant-list-item-action {
-  margin-left: 8px;
+.me-order-meta {
+  flex: 0 0 auto;
 }
 
 /* 订单状态标签 */
@@ -197,7 +217,7 @@
 }
 
 /* 订单金额 */
-.me-orders-card .ant-list-item .ant-typography-strong {
+.me-order-item .ant-typography-strong {
   font-size: 13px;
   color: #f04f3e;
 }
@@ -243,36 +263,44 @@
   border-radius: 999px;
 }
 
+.activity-list {
+  display: flex;
+  flex-direction: column;
+}
+
 .activity-list-item {
+  display: flex;
+  align-items: center;
   gap: 8px;
   padding: 10px 0 !important;
 }
 
-.activity-list-item .ant-list-item-meta {
+.activity-list-main {
+  display: flex;
+  flex: 1 1 auto;
   min-width: 0;
-  align-items: center;
+  flex-direction: column;
 }
 
-.activity-list-item .ant-list-item-meta-title {
+.activity-list-title {
   margin-bottom: 2px !important;
   font-size: 13px !important;
   font-weight: 600 !important;
-}
-
-.activity-list-item .ant-list-item-meta-title,
-.activity-list-item .ant-list-item-meta-description {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.activity-list-item .ant-list-item-meta-description {
+.activity-list-description {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   color: #94a3b8 !important;
   font-size: 12px !important;
 }
 
-.activity-list-item .ant-list-item-action {
-  margin-left: 8px;
+.activity-list-item .ant-btn {
+  flex: 0 0 auto;
 }
 
 .activity-thumb {
@@ -394,19 +422,19 @@
     padding: 6px 12px 12px;
   }
 
-  .me-orders-card .ant-list-item {
+  .me-order-item {
     align-items: flex-start;
     flex-wrap: wrap;
     gap: 8px;
     padding: 10px 0 !important;
   }
 
-  .me-orders-card .ant-list-item .ant-list-item-meta {
+  .me-order-main {
     min-width: 0;
     flex: 1 1 100%;
   }
 
-  .me-orders-card .ant-list-item-meta-description {
+  .me-order-description {
     display: -webkit-box;
     overflow: hidden;
     -webkit-box-orient: vertical;
@@ -414,8 +442,8 @@
     white-space: normal;
   }
 
-  .me-orders-card .ant-list-item-action {
-    margin-left: 0;
+  .me-order-meta {
+    align-items: flex-start !important;
   }
 
   .activity-card .ant-card-body {
@@ -427,11 +455,11 @@
     flex-wrap: wrap;
   }
 
-  .activity-list-item .ant-list-item-meta {
+  .activity-list-main {
     flex: 1 1 calc(100% - 64px);
   }
 
-  .activity-list-item .ant-list-item-action {
+  .activity-list-item .ant-btn {
     margin-left: 0;
   }
 
@@ -460,17 +488,11 @@
     margin-left: 8px;
   }
 
-  .activity-list-item .ant-list-item-action {
+  .activity-list-item .ant-btn {
     width: 100%;
   }
 
-  .activity-list-item .ant-list-item-action > li {
-    width: 100%;
-    padding: 0 !important;
-  }
-
-  .activity-list-item .ant-list-item-action .ant-btn {
-    width: 100%;
+  .activity-list-item .ant-btn {
     text-align: left;
   }
 }

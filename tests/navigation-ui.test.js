@@ -38,6 +38,17 @@ test('deep shopping pages expose explicit return navigation', () => {
   }
 });
 
+test('cart quantity inputs keep keyboard edits editable before committing values', () => {
+  const cartPage = readSource('src/pages/CartPage.jsx');
+  const shopLayout = readSource('src/layouts/ShopLayout.jsx');
+
+  assert.match(cartPage, /quantityDrafts/);
+  assert.match(cartPage, /commitQuantity/);
+  assert.match(shopLayout, /quantityDrafts/);
+  assert.match(shopLayout, /commitQuantity/);
+  assert.doesNotMatch(cartPage, /if\s*\(!quantity\)\s*return/);
+});
+
 test('shopping flow mutations are visible in mock api logs', () => {
   const pages = [
     readSource('src/pages/HomePage.jsx'),
@@ -265,6 +276,7 @@ test('me page shows favorite, follow, and footprint windows with product and cat
   const mePage = readSource('src/pages/MePage.jsx');
   const mePageCss = readSource('src/pages/MePage.css');
 
+  assert.doesNotMatch(mePage, /\bList\b/);
   assert.match(mePage, /userActivityService/);
   assert.match(mePage, /productService/);
   assert.match(mePage, /categoryService/);

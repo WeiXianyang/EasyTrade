@@ -70,8 +70,8 @@ export default function AdminDashboardPage() {
   const scenarioSteps = demoService.getScenarioSteps();
 
   // 统计图表数据（useMemo 避免每次渲染重新计算）
-  const salesTrend = useMemo(() => buildSalesTrend(orders, 7), [orders.length]);
-  const categoryDist = useMemo(() => buildCategoryDist(products), [products.length]);
+  const salesTrend = useMemo(() => buildSalesTrend(orders, 7), [orders]);
+  const categoryDist = useMemo(() => buildCategoryDist(products), [products]);
 
   return (
     <Space orientation="vertical" size={18} style={{ width: '100%' }}>

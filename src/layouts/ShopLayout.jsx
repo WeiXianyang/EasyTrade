@@ -1,5 +1,5 @@
 import { Badge, Button, Checkbox, Drawer, Empty, Flex, Image, InputNumber, Layout, Space, Tooltip, Typography } from 'antd';
-import { useEffect, useReducer, useState } from 'react';
+import { useCallback, useEffect, useReducer, useState } from 'react';
 import {
   AppstoreOutlined,
   DeleteOutlined,
@@ -26,6 +26,14 @@ const navItems = [
   { key: '/category', to: '/category', icon: <AppstoreOutlined />, label: '分类' },
   { key: '/me', to: '/me', icon: <UserOutlined />, label: '我的' },
 ];
+
+function hasQuantityDraft(quantityDrafts, productId) {
+  return Object.prototype.hasOwnProperty.call(quantityDrafts, productId);
+}
+
+function isCommitableQuantity(quantity) {
+  return quantity !== null && quantity !== undefined && quantity !== '';
+}
 
 function selectedKey(pathname) {
   if (pathname.startsWith('/category')) return '/category';
@@ -56,10 +64,12 @@ export default function ShopLayout() {
   }, []);
   const navigate = useNavigate();
   const { cartCount, cartDrawerOpen, closeCart, currentUser, logoutUser, refresh, theme, toggleTheme } = useApp();
+  const currentUserId = currentUser?.id;
   const activeKey = selectedKey(location.pathname);
 
   // 本地 state 持有购物车快照，Drawer 打开时强制刷新
   const [localVersion, forceUpdate] = useReducer((n) => n + 1, 0);
+  const [quantityDrafts, setQuantityDrafts] = useState({});
 
   useEffect(() => {
     if (cartDrawerOpen) {
@@ -67,18 +77,42 @@ export default function ShopLayout() {
     }
   }, [cartDrawerOpen]);
 
-  const cartItems = currentUser ? cartService.getCart(currentUser.id) : [];
-  const cartSummary = currentUser ? cartService.getSelectedSummary(currentUser.id) : { count: 0, total: 0 };
+  const cartItems = currentUserId ? cartService.getCart(currentUserId) : [];
+  const cartSummary = currentUserId ? cartService.getSelectedSummary(currentUserId) : { count: 0, total: 0 };
   const hasSelectedCartItems = cartItems.some((item) => item.selected);
   const allCartItemsSelected = cartItems.length > 0 && cartItems.every((item) => item.selected);
   const partiallySelectedCartItems = hasSelectedCartItems && !allCartItemsSelected;
   void localVersion; // 消费 localVersion，使上方两行在 forceUpdate 后重新执行
 
-  const updateCart = (action) => {
+  const updateCart = useCallback((action) => {
     action();
     refresh();
     forceUpdate(); // Drawer 内操作（删除/改数量）后立即刷新列表
-  };
+  }, [refresh]);
+
+  const resetQuantityDraft = useCallback((productId) => {
+    setQuantityDrafts((previous) => {
+      if (!hasQuantityDraft(previous, productId)) return previous;
+      const next = { ...previous };
+      delete next[productId];
+      return next;
+    });
+  }, []);
+
+  const commitQuantity = useCallback((productId, quantity) => {
+    if (!currentUserId || !isCommitableQuantity(quantity)) return;
+    updateCart(() => cartService.updateQuantity(currentUserId, productId, quantity));
+    resetQuantityDraft(productId);
+  }, [currentUserId, resetQuantityDraft, updateCart]);
+
+  const updateQuantity = useCallback((productId, quantity) => {
+    setQuantityDrafts((previous) => ({ ...previous, [productId]: quantity }));
+    commitQuantity(productId, quantity);
+  }, [commitQuantity]);
+
+  const getQuantityValue = useCallback((item) => (
+    hasQuantityDraft(quantityDrafts, item.productId) ? quantityDrafts[item.productId] : item.quantity
+  ), [quantityDrafts]);
 
   const goCheckout = () => {
     closeCart();
@@ -148,6 +182,9 @@ export default function ShopLayout() {
         title="购物车"
         open={cartDrawerOpen}
         onClose={closeCart}
+        afterOpenChange={(open) => {
+          if (!open) setQuantityDrafts({});
+        }}
         size="default"
         footer={
           currentUser && cartItems.length > 0 ? (
@@ -197,14 +234,14 @@ export default function ShopLayout() {
               <Checkbox
                 checked={allCartItemsSelected}
                 indeterminate={partiallySelectedCartItems}
-                onChange={(event) => updateCart(() => cartService.setAllSelected(currentUser.id, event.target.checked))}
+                onChange={(event) => updateCart(() => cartService.setAllSelected(currentUserId, event.target.checked))}
               >
                 全选
               </Checkbox>
               <Button
                 size="small"
                 disabled={!hasSelectedCartItems}
-                onClick={() => updateCart(() => cartService.setAllSelected(currentUser.id, false))}
+                onClick={() => updateCart(() => cartService.setAllSelected(currentUserId, false))}
               >
                 取消全选
               </Button>
@@ -214,7 +251,7 @@ export default function ShopLayout() {
                 <Checkbox
                   aria-label={`选择 ${item.product.name}`}
                   checked={item.selected}
-                  onChange={(event) => updateCart(() => cartService.setSelected(currentUser.id, item.productId, event.target.checked))}
+                  onChange={(event) => updateCart(() => cartService.setSelected(currentUserId, item.productId, event.target.checked))}
                 />
                 <Image width={56} height={42} src={item.product.image} alt={item.product.name} style={{ objectFit: 'cover', borderRadius: 8 }} />
                 <Flex vertical flex={1} gap={4}>
@@ -225,14 +262,18 @@ export default function ShopLayout() {
                       className="cart-drawer-qty"
                       min={1}
                       max={item.product.stock}
-                      value={item.quantity}
-                      onChange={(value) => updateCart(() => cartService.updateQuantity(currentUser.id, item.productId, value))}
+                      value={getQuantityValue(item)}
+                      onChange={(value) => updateQuantity(item.productId, value)}
+                      onBlur={() => resetQuantityDraft(item.productId)}
                     />
                     <Button
                       danger
                       type="text"
                       icon={<DeleteOutlined />}
-                      onClick={() => updateCart(() => cartService.removeItem(currentUser.id, item.productId))}
+                      onClick={() => {
+                        resetQuantityDraft(item.productId);
+                        updateCart(() => cartService.removeItem(currentUserId, item.productId));
+                      }}
                     />
                   </Flex>
                 </Flex>
