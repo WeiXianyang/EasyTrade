@@ -3,8 +3,8 @@ import { DeleteOutlined, ShoppingOutlined } from '@ant-design/icons';
 import { useCallback, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+import easytradeApi from '../api/easytradeApi.js';
 import { useApp } from '../contexts/useApp.js';
-import cartService from '../services/cartService.js';
 import { formatCurrency } from '../utils/format.js';
 
 function hasQuantityDraft(quantityDrafts, productId) {
@@ -18,18 +18,11 @@ function isCommitableQuantity(quantity) {
 export default function CartPage() {
   const navigate = useNavigate();
   const { message } = App.useApp();
-  const { currentUser } = useApp();
+  const { cartItems: items, cartSummary: summary, refreshCart } = useApp();
 
-  const [items, setItems] = useState(() => cartService.getCart(currentUser.id));
-  const [summary, setSummary] = useState(() => cartService.getSelectedSummary(currentUser.id));
   const [quantityDrafts, setQuantityDrafts] = useState({});
 
-  const reload = useCallback(() => {
-    const newItems = cartService.getCart(currentUser.id);
-    setItems(newItems);
-    setSummary(cartService.getSelectedSummary(currentUser.id));
-    return newItems;
-  }, [currentUser.id]);
+  const reload = useCallback(() => refreshCart(), [refreshCart]);
 
   const resetQuantityDraft = useCallback((productId) => {
     setQuantityDrafts((previous) => {
@@ -40,32 +33,32 @@ export default function CartPage() {
     });
   }, []);
 
-  const commitQuantity = useCallback((productId, quantity) => {
+  const commitQuantity = useCallback(async (productId, quantity) => {
     if (!isCommitableQuantity(quantity)) return;
-    cartService.updateQuantity(currentUser.id, productId, quantity);
+    await easytradeApi.cart.updateQuantity(productId, quantity);
     resetQuantityDraft(productId);
-    reload();
-  }, [currentUser.id, reload, resetQuantityDraft]);
+    await reload();
+  }, [reload, resetQuantityDraft]);
 
   const updateQuantity = useCallback((productId, quantity) => {
     setQuantityDrafts((previous) => ({ ...previous, [productId]: quantity }));
-    commitQuantity(productId, quantity);
+    void commitQuantity(productId, quantity);
   }, [commitQuantity]);
 
   const getQuantityValue = useCallback((item) => (
     hasQuantityDraft(quantityDrafts, item.productId) ? quantityDrafts[item.productId] : item.quantity
   ), [quantityDrafts]);
 
-  const setItemSelected = useCallback((productId, checked) => {
-    cartService.setSelected(currentUser.id, productId, checked);
-    reload();
-  }, [currentUser.id, reload]);
+  const setItemSelected = useCallback(async (productId, checked) => {
+    await easytradeApi.cart.setSelected(productId, checked);
+    await reload();
+  }, [reload]);
 
-  const removeItem = useCallback((productId) => {
+  const removeItem = useCallback(async (productId) => {
     resetQuantityDraft(productId);
-    cartService.removeItem(currentUser.id, productId);
-    reload();
-  }, [currentUser.id, reload, resetQuantityDraft]);
+    await easytradeApi.cart.removeItem(productId);
+    await reload();
+  }, [reload, resetQuantityDraft]);
 
   // 用 useMemo 缓存 columns 定义，避免每次渲染重新创建对象数组
   const columns = useMemo(() => [
@@ -152,9 +145,9 @@ export default function CartPage() {
           selectedRowKeys,
           onChange: (newSelectedRowKeys) => {
             items.forEach((item) => {
-              cartService.setSelected(currentUser.id, item.productId, newSelectedRowKeys.includes(item.productId));
+              void easytradeApi.cart.setSelected(item.productId, newSelectedRowKeys.includes(item.productId));
             });
-            reload();
+            void reload();
           },
         }}
       />
@@ -165,7 +158,7 @@ export default function CartPage() {
               className="cart-mobile-check"
               aria-label={`选择 ${item.product.name}`}
               checked={item.selected}
-              onChange={(event) => setItemSelected(item.productId, event.target.checked)}
+              onChange={(event) => void setItemSelected(item.productId, event.target.checked)}
             />
             <Image
               width={86}
@@ -204,16 +197,14 @@ export default function CartPage() {
         <Space>
           <Button
             onClick={() => {
-              cartService.setAllSelected(currentUser.id, true);
-              reload();
+              void easytradeApi.cart.setAllSelected(true).then(reload);
             }}
           >
             全选
           </Button>
           <Button
             onClick={() => {
-              cartService.setAllSelected(currentUser.id, false);
-              reload();
+              void easytradeApi.cart.setAllSelected(false).then(reload);
             }}
           >
             取消全选

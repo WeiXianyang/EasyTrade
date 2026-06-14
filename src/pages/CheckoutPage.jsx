@@ -1,67 +1,55 @@
 import { App, Button, Card, Col, Flex, Form, Input, Row, Space, Typography } from 'antd';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
+import easytradeApi from '../api/easytradeApi.js';
 import PriceText from '../components/shop/PriceText.jsx';
 import { useApp } from '../contexts/useApp.js';
-import cartService from '../services/cartService.js';
-import mockApiService from '../services/mockApiService.js';
-import orderService from '../services/orderService.js';
-import productService from '../services/productService.js';
 import { formatCurrency } from '../utils/format.js';
 
 export default function CheckoutPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { message } = App.useApp();
-  const { currentUser, refresh } = useApp();
+  const { cartItems, currentUser, refreshCart } = useApp();
   const buyNowProductId = searchParams.get('buyNow');
   const quantity = Number(searchParams.get('quantity') || 1);
+  const [buyNowProduct, setBuyNowProduct] = useState(null);
 
-  const checkoutItems = (() => {
+  useEffect(() => {
     if (buyNowProductId) {
-      const product = productService.getProductById(buyNowProductId);
-      return product
-        ? [
-            {
-              userId: currentUser.id,
-              productId: product.id,
-              quantity,
-              selected: true,
-              product,
-              subtotal: product.price * quantity,
-            },
-          ]
+      easytradeApi.catalog.product(buyNowProductId)
+        .then(setBuyNowProduct)
+        .catch(() => setBuyNowProduct(null));
+    } else {
+      queueMicrotask(() => setBuyNowProduct(null));
+    }
+  }, [buyNowProductId]);
+
+  const checkoutItems = useMemo(() => {
+    if (buyNowProductId) {
+      return buyNowProduct
+        ? [{
+            productId: buyNowProduct.id,
+            quantity,
+            selected: true,
+            product: buyNowProduct,
+            subtotal: buyNowProduct.price * quantity,
+          }]
         : [];
     }
-    return cartService.getSelectedItems(currentUser.id);
-  })();
+    return cartItems.filter((item) => item.selected && item.product);
+  }, [buyNowProduct, buyNowProductId, cartItems, quantity]);
 
   const total = checkoutItems.reduce((sum, item) => sum + item.subtotal, 0);
   const initialAddress = currentUser.address || {};
 
-  const submitOrder = (values) => {
+  const submitOrder = async (values) => {
     try {
-      const order = mockApiService.request({
-        method: 'POST',
-        path: '/orders',
-        actor: currentUser,
-        moduleName: '前台订单',
-        action: '创建订单',
-        target: checkoutItems.map((item) => item.product.name).join('、'),
-        handler: () => orderService.createOrderFromCart(currentUser.id, checkoutItems, values),
-      });
-      if (!buyNowProductId) {
-        mockApiService.request({
-          method: 'DELETE',
-          path: '/cart/items/selected',
-          actor: currentUser,
-          moduleName: '前台购物车',
-          action: '清理已结算商品',
-          target: '购物车已选商品',
-          handler: () => cartService.removeSelected(currentUser.id),
-        });
-      }
-      refresh();
+      const order = buyNowProductId
+        ? await easytradeApi.orders.buyNow(buyNowProductId, quantity, values)
+        : await easytradeApi.orders.create(values);
+      await refreshCart();
       message.success('订单已创建');
       navigate(`/pay/${order.id}`);
     } catch (error) {

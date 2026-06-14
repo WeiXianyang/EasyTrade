@@ -3,13 +3,9 @@ import { HeartFilled, HeartOutlined, ShoppingCartOutlined } from '@ant-design/ic
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
+import easytradeApi from '../api/easytradeApi.js';
 import PriceText from '../components/shop/PriceText.jsx';
 import { useApp } from '../contexts/useApp.js';
-import cartService from '../services/cartService.js';
-import categoryService from '../services/categoryService.js';
-import mockApiService from '../services/mockApiService.js';
-import productService from '../services/productService.js';
-import userActivityService from '../services/userActivityService.js';
 
 export default function ProductDetailPage() {
   const { productId } = useParams();
@@ -17,17 +13,44 @@ export default function ProductDetailPage() {
   const { message } = App.useApp();
   const { currentUser, openCart, refresh } = useApp();
   const [quantity, setQuantity] = useState(1);
-  const currentUserId = currentUser?.id || '';
-  const product = productService.getProductById(productId);
-  const category = product ? categoryService.getCategoryById(product.categoryId) : null;
+  const [product, setProduct] = useState(null);
+  const [category, setCategory] = useState(null);
+  const [isFavorite, setIsFavorite] = useState(false);
   const productExists = Boolean(product);
   const canBuy = product ? product.status === 'on' && product.stock > 0 : false;
-  const isFavorite = userActivityService.isFavorite(currentUserId, productId);
 
   useEffect(() => {
-    if (!currentUserId || !productId || !productExists) return;
-    userActivityService.recordFootprint(currentUserId, productId);
-  }, [currentUserId, productId, productExists]);
+    let active = true;
+    Promise.all([
+      easytradeApi.catalog.product(productId),
+      easytradeApi.catalog.categories(),
+    ])
+      .then(([nextProduct, categories]) => {
+        if (!active) return;
+        setProduct(nextProduct);
+        setCategory(categories?.find((item) => item.id === nextProduct?.categoryId) || null);
+      })
+      .catch(() => {
+        if (!active) return;
+        setProduct(null);
+        setCategory(null);
+      });
+    return () => {
+      active = false;
+    };
+  }, [productId]);
+
+  useEffect(() => {
+    if (!currentUser || !productId || !productExists) return;
+    void easytradeApi.activity.recordFootprint(productId);
+  }, [currentUser, productId, productExists]);
+
+  useEffect(() => {
+    if (!currentUser || !productId || !productExists) return;
+    easytradeApi.activity.favorites()
+      .then((items) => setIsFavorite(items.some((item) => item.product?.id === productId || item.productId === productId)))
+      .catch(() => setIsFavorite(false));
+  }, [currentUser, productId, productExists]);
 
   const ensureLogin = useCallback(() => {
     if (!currentUser) {
@@ -38,22 +61,18 @@ export default function ProductDetailPage() {
     return true;
   }, [currentUser, message, navigate]);
 
-  const addCart = useCallback(() => {
+  const addCart = useCallback(async () => {
     if (!product) return;
     if (!ensureLogin()) return;
-    mockApiService.request({
-      method: 'POST',
-      path: '/cart/items',
-      actor: currentUser,
-      moduleName: '前台购物车',
-      action: '加入购物车',
-      target: product.name,
-      handler: () => cartService.addItem(currentUser.id, product.id, quantity),
-    });
-    refresh();
-    openCart();
-    message.success('已加入购物车');
-  }, [ensureLogin, currentUser, product, quantity, refresh, openCart, message]);
+    try {
+      await easytradeApi.cart.addItem(product.id, quantity);
+      await refresh();
+      openCart();
+      message.success('已加入购物车');
+    } catch (error) {
+      message.error(error.message);
+    }
+  }, [ensureLogin, product, quantity, refresh, openCart, message]);
 
   const buyNow = useCallback(() => {
     if (!product) return;
@@ -61,13 +80,17 @@ export default function ProductDetailPage() {
     navigate(`/checkout?buyNow=${product.id}&quantity=${quantity}`);
   }, [ensureLogin, navigate, product, quantity]);
 
-  const toggleFavorite = useCallback(() => {
+  const toggleFavorite = useCallback(async () => {
     if (!product) return;
     if (!ensureLogin()) return;
-    const result = userActivityService.toggleFavorite(currentUserId, productId);
-    refresh();
-    message.success(result.favorited ? '已加入收藏' : '已取消收藏');
-  }, [currentUserId, ensureLogin, message, product, productId, refresh]);
+    try {
+      const result = await easytradeApi.activity.toggleFavorite(productId);
+      setIsFavorite(result.active);
+      message.success(result.active ? '已加入收藏' : '已取消收藏');
+    } catch (error) {
+      message.error(error.message);
+    }
+  }, [ensureLogin, message, product, productId]);
 
   if (!product) {
     return <Empty description="商品不存在" />;

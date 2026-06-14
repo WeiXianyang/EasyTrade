@@ -18,11 +18,12 @@ export default function AdminLoginPage({ dashboardPath = '/admin', shopUrl = '/'
     }
 
     try {
-      const admin = JSON.parse(handoff);
+      const payload = JSON.parse(handoff);
+      const admin = payload?.user || payload;
       if (!['admin', 'operator'].includes(admin.role)) {
         throw new Error('无效的后台身份');
       }
-      const acceptedAdmin = acceptAdminHandoff(admin);
+      const acceptedAdmin = acceptAdminHandoff(payload);
       message.success(`欢迎进入后台，${acceptedAdmin.name}`);
       navigate(dashboardPath, { replace: true });
     } catch (error) {
@@ -30,9 +31,9 @@ export default function AdminLoginPage({ dashboardPath = '/admin', shopUrl = '/'
     }
   }, [acceptAdminHandoff, dashboardPath, message, navigate, searchParams]);
 
-  const handleLogin = (values) => {
+  const handleLogin = async (values) => {
     try {
-      const admin = loginAdmin(values.username, values.password);
+      const admin = await loginAdmin(values.username, values.password);
       message.success(`欢迎进入后台，${admin.name}`);
       navigate(dashboardPath);
     } catch (error) {

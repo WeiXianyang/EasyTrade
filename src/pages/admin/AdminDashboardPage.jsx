@@ -1,5 +1,5 @@
 import { Card, Col, Row, Space, Statistic, Steps, Table, Tag, Typography } from 'antd';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Bar,
   BarChart,
@@ -14,13 +14,10 @@ import {
   YAxis,
 } from 'recharts';
 
+import easytradeApi from '../../api/easytradeApi.js';
 import PermissionNotice from '../../components/admin/PermissionNotice.jsx';
 import { useApp } from '../../contexts/useApp.js';
-import auditLogService from '../../services/auditLogService.js';
 import demoService from '../../services/demoService.js';
-import productService from '../../services/productService.js';
-import requestLogService from '../../services/requestLogService.js';
-import orderService from '../../services/orderService.js';
 import { formatCurrency, formatOrderStatus } from '../../utils/format.js';
 
 /** 将订单数据按日期聚合为近 N 天的销售额 + 订单量 */
@@ -32,11 +29,11 @@ function buildSalesTrend(orders, days = 7) {
     d.setDate(today.getDate() - i);
     const key = `${d.getMonth() + 1}/${d.getDate()}`;
     const dateStr = d.toISOString().slice(0, 10);
-    const dayOrders = orders.filter(
-      (o) =>
-        o.createdAt?.startsWith(dateStr) &&
-        (o.status === 'paid' || o.status === 'shipped' || o.status === 'finished'),
-    );
+    const dayOrders = orders.filter((o) => {
+      const rawDate = o.createdAt || o.createTime || '';
+      const matchesDate = rawDate.startsWith(dateStr) || rawDate.startsWith(`${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`);
+      return matchesDate && (o.status === 'paid' || o.status === 'shipped' || o.status === 'finished');
+    });
     result.push({
       date: key,
       销售额: dayOrders.reduce((s, o) => s + o.totalAmount, 0),
@@ -59,15 +56,42 @@ const CHART_COLORS = ['#f04f3e', '#256d5a', '#3b82f6', '#f59e0b', '#8b5cf6', '#1
 
 export default function AdminDashboardPage() {
   const { currentAdmin, version, theme } = useApp();
+  const [products, setProducts] = useState([]);
+  const [orders, setOrders] = useState([]);
+  const [requestLogs, setRequestLogs] = useState([]);
+  const [auditLogs, setAuditLogs] = useState([]);
   const isDark = theme === 'dark';
   const gridStroke = isDark ? '#334155' : '#edf1f5';
-  const products = productService.getAdminProducts();
-  const orders = orderService.getAllOrders();
   const paidOrders = orders.filter((order) => order.status === 'paid' || order.status === 'shipped');
   const totalSales = orders.reduce((sum, order) => sum + order.totalAmount, 0);
-  const requestLogs = requestLogService.getRequestLogs(5);
-  const auditLogs = auditLogService.getAuditLogs(5);
   const scenarioSteps = demoService.getScenarioSteps();
+
+  useEffect(() => {
+    let active = true;
+    Promise.all([
+      easytradeApi.catalog.adminProducts(),
+      easytradeApi.orders.adminList(),
+      easytradeApi.admin.requestLogs(5),
+      easytradeApi.admin.auditLogs(5),
+    ])
+      .then(([nextProducts, nextOrders, nextRequestLogs, nextAuditLogs]) => {
+        if (!active) return;
+        setProducts(nextProducts || []);
+        setOrders(nextOrders || []);
+        setRequestLogs(nextRequestLogs || []);
+        setAuditLogs(nextAuditLogs || []);
+      })
+      .catch(() => {
+        if (!active) return;
+        setProducts([]);
+        setOrders([]);
+        setRequestLogs([]);
+        setAuditLogs([]);
+      });
+    return () => {
+      active = false;
+    };
+  }, [version]);
 
   // 统计图表数据（useMemo 避免每次渲染重新计算）
   const salesTrend = useMemo(() => buildSalesTrend(orders, 7), [orders]);
@@ -195,7 +219,7 @@ export default function AdminDashboardPage() {
         </Col>
       </Row>
       <Typography.Text className="muted">
-        Mock API 最近记录 {requestLogs.length} 条，审计最近记录 {auditLogs.length} 条。
+        后端请求最近记录 {requestLogs.length} 条，审计最近记录 {auditLogs.length} 条。
       </Typography.Text>
       <Typography.Text className="muted">版本刷新标识：{version}</Typography.Text>
     </Space>

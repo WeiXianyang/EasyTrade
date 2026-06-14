@@ -15,39 +15,55 @@ import {
   Typography,
 } from 'antd';
 import { EditOutlined, PlusOutlined } from '@ant-design/icons';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import categoryService from '../../services/categoryService.js';
-import mockApiService from '../../services/mockApiService.js';
-import productService from '../../services/productService.js';
+import easytradeApi from '../../api/easytradeApi.js';
 import { formatCurrency } from '../../utils/format.js';
 import { useApp } from '../../contexts/useApp.js';
 
 export default function AdminProductsPage() {
   const { message } = App.useApp();
-  const { currentAdmin, refresh } = useApp();
+  const { refresh } = useApp();
   const [form] = Form.useForm();
   const [keyword, setKeyword] = useState('');
   const [status, setStatus] = useState('all');
+  const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [editingProduct, setEditingProduct] = useState(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [version, setVersion] = useState(0);
-  const categories = categoryService.getCategories();
 
-  const reload = useCallback(() => {
+  const reload = useCallback(async () => {
     setVersion((v) => v + 1);
-    refresh();
+    await refresh();
   }, [refresh]);
 
-  const products = useMemo(() => {
-    void version;
-    const lowerKeyword = keyword.trim().toLowerCase();
-    return productService.getAdminProducts().filter((product) => {
-      const matchesKeyword = !lowerKeyword || product.name.toLowerCase().includes(lowerKeyword);
-      const matchesStatus = status === 'all' || product.status === status;
-      return matchesKeyword && matchesStatus;
-    });
-  }, [keyword, status, version]);
+  useEffect(() => {
+    let active = true;
+    Promise.all([
+      easytradeApi.catalog.categories(),
+      easytradeApi.catalog.adminProducts({ keyword, status }),
+    ])
+      .then(([nextCategories, nextProducts]) => {
+        if (!active) return;
+        setCategories(nextCategories || []);
+        setProducts(nextProducts || []);
+      })
+      .catch((error) => {
+        if (!active) return;
+        setCategories([]);
+        setProducts([]);
+        message.error(error.message);
+      });
+    return () => {
+      active = false;
+    };
+  }, [keyword, message, status, version]);
+
+  const categoryNameById = useMemo(
+    () => new Map(categories.map((category) => [category.id, category.name])),
+    [categories],
+  );
 
   const openDrawer = (product = null) => {
     setEditingProduct(product);
@@ -65,25 +81,25 @@ export default function AdminProductsPage() {
     setDrawerOpen(true);
   };
 
-  const saveProduct = (values) => {
+  const saveProduct = async (values) => {
     const payload = {
       ...editingProduct,
       ...values,
       tags: values.tags ? values.tags.split(/[，,]/).map((tag) => tag.trim()).filter(Boolean) : [],
     };
-    mockApiService.request({
-      method: editingProduct ? 'PUT' : 'POST',
-      path: editingProduct ? `/admin/products/${editingProduct.id}` : '/admin/products',
-      actor: currentAdmin,
-      moduleName: '商品管理',
-      action: editingProduct ? '编辑商品' : '新增商品',
-      target: payload.name,
-      handler: () => (editingProduct ? productService.updateProduct(payload) : productService.addProduct(payload)),
-    });
-    message.success(editingProduct ? '商品已更新' : '商品已新增');
-    setDrawerOpen(false);
-    form.resetFields();
-    reload();
+    try {
+      if (editingProduct) {
+        await easytradeApi.catalog.updateProduct(editingProduct.id, payload);
+      } else {
+        await easytradeApi.catalog.addProduct(payload);
+      }
+      message.success(editingProduct ? '商品已更新' : '商品已新增');
+      setDrawerOpen(false);
+      form.resetFields();
+      await reload();
+    } catch (error) {
+      message.error(error.message);
+    }
   };
 
   return (
@@ -136,7 +152,7 @@ export default function AdminProductsPage() {
             dataIndex: 'categoryId',
             width: 130,
             ellipsis: true,
-            render: (categoryId) => categoryService.getCategoryById(categoryId)?.name || categoryId,
+            render: (categoryId) => categoryNameById.get(categoryId) || categoryId,
           },
           {
             title: '价格',
@@ -155,17 +171,13 @@ export default function AdminProductsPage() {
                 checked={value === 'on'}
                 checkedChildren="在售"
                 unCheckedChildren="下架"
-                onChange={(checked) => {
-                  mockApiService.request({
-                    method: 'PATCH',
-                    path: `/admin/products/${record.id}/status`,
-                    actor: currentAdmin,
-                    moduleName: '商品管理',
-                    action: checked ? '上架商品' : '下架商品',
-                    target: record.name,
-                    handler: () => productService.toggleStatus(record.id, checked ? 'on' : 'off'),
-                  });
-                  reload();
+                onChange={async (checked) => {
+                  try {
+                    await easytradeApi.catalog.toggleProductStatus(record.id, checked ? 'on' : 'off');
+                    await reload();
+                  } catch (error) {
+                    message.error(error.message);
+                  }
                 }}
               />
             ),
@@ -188,18 +200,14 @@ export default function AdminProductsPage() {
                 <Popconfirm
                   title="删除商品？"
                   description="删除后前台和后台都不再显示该商品。"
-                  onConfirm={() => {
-                    mockApiService.request({
-                      method: 'DELETE',
-                      path: `/admin/products/${record.id}`,
-                      actor: currentAdmin,
-                      moduleName: '商品管理',
-                      action: '删除商品',
-                      target: record.name,
-                      handler: () => productService.deleteProduct(record.id),
-                    });
-                    reload();
-                    message.success('商品已删除');
+                  onConfirm={async () => {
+                    try {
+                      await easytradeApi.catalog.deleteProduct(record.id);
+                      await reload();
+                      message.success('商品已删除');
+                    } catch (error) {
+                      message.error(error.message);
+                    }
                   }}
                 >
                   <Button danger type="link">

@@ -1,9 +1,8 @@
 import { App, Button, Card, Descriptions, Input, Modal, Space, Table, Tag, Typography } from 'antd';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
+import easytradeApi from '../../api/easytradeApi.js';
 import { useApp } from '../../contexts/useApp.js';
-import mockApiService from '../../services/mockApiService.js';
-import orderService from '../../services/orderService.js';
 import { formatCurrency, formatOrderStatus } from '../../utils/format.js';
 
 export default function AdminOrdersPage() {
@@ -11,36 +10,45 @@ export default function AdminOrdersPage() {
   const { currentAdmin, refresh } = useApp();
   const [shippingOrder, setShippingOrder] = useState(null);
   const [trackingNo, setTrackingNo] = useState('');
+  const [orders, setOrders] = useState([]);
   const [version, setVersion] = useState(0);
   const isAdmin = currentAdmin.role === 'admin';
 
-  const reload = useCallback(() => {
+  const reload = useCallback(async () => {
     setVersion((v) => v + 1);
-    refresh();
+    await refresh();
   }, [refresh]);
 
-  // version 变化驱动重渲染，每次渲染重新读取最新数据
-  void version;
-  const orders = orderService.getAllOrders();
+  useEffect(() => {
+    let active = true;
+    easytradeApi.orders.adminList()
+      .then((items) => {
+        if (active) setOrders(items || []);
+      })
+      .catch((error) => {
+        if (!active) return;
+        setOrders([]);
+        message.error(error.message);
+      });
+    return () => {
+      active = false;
+    };
+  }, [message, version]);
 
-  const shipOrder = () => {
+  const shipOrder = async () => {
     if (!trackingNo.trim()) {
       message.warning('请输入物流单号');
       return;
     }
-    mockApiService.request({
-      method: 'PATCH',
-      path: `/admin/orders/${shippingOrder.id}/ship`,
-      actor: currentAdmin,
-      moduleName: '订单管理',
-      action: '订单发货',
-      target: shippingOrder.orderNo,
-      handler: () => orderService.shipOrder(shippingOrder.id, trackingNo.trim()),
-    });
-    setShippingOrder(null);
-    setTrackingNo('');
-    reload();
-    message.success('订单已发货');
+    try {
+      await easytradeApi.orders.ship(shippingOrder.id, trackingNo.trim());
+      setShippingOrder(null);
+      setTrackingNo('');
+      await reload();
+      message.success('订单已发货');
+    } catch (error) {
+      message.error(error.message);
+    }
   };
 
   return (

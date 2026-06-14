@@ -1,9 +1,8 @@
 import { App, Button, Card, Space, Switch, Table, Tag, Typography } from 'antd';
 import { ReloadOutlined } from '@ant-design/icons';
-import { useState } from 'react';
 
+import easytradeApi from '../../api/easytradeApi.js';
 import { useApp } from '../../contexts/useApp.js';
-import mockApiService from '../../services/mockApiService.js';
 import permissionService, { getRoleLabel } from '../../services/permissionService.js';
 
 const roleRows = [
@@ -15,44 +14,36 @@ const lockedAdminModules = ['dashboard', 'roles'];
 
 export default function AdminRolesPage() {
   const { message } = App.useApp();
-  const { currentAdmin, refresh } = useApp();
-  const [permissions, setPermissions] = useState(() => permissionService.getRolePermissions());
+  const { currentAdmin, refresh, reloadPermissions, rolePermissions } = useApp();
+  const permissions = rolePermissions;
   const modules = permissionService.getModules();
   const editable = currentAdmin.role === 'admin';
 
-  const persistPermissions = (role, moduleName, checked) => {
+  const persistPermissions = async (role, moduleName, checked) => {
     const currentModules = permissions[role] || [];
     const nextModules = checked
       ? [...currentModules, moduleName]
       : currentModules.filter((item) => item !== moduleName);
     const moduleLabel = modules.find((module) => module.key === moduleName)?.label || moduleName;
-    const nextPermissions = mockApiService.request({
-      method: 'PATCH',
-      path: `/admin/roles/${role}`,
-      actor: currentAdmin,
-      moduleName: '权限管理',
-      action: checked ? '开放角色模块' : '关闭角色模块',
-      target: `${getRoleLabel(role)} - ${moduleLabel}`,
-      handler: () => permissionService.updateRolePermissions(role, nextModules),
-    });
-    setPermissions(nextPermissions);
-    refresh();
-    message.success('权限配置已更新');
+    try {
+      await easytradeApi.admin.updatePermissions(role, nextModules);
+      await reloadPermissions();
+      refresh();
+      message.success(`${getRoleLabel(role)} - ${moduleLabel} 权限已更新`);
+    } catch (error) {
+      message.error(error.message);
+    }
   };
 
-  const resetPermissions = () => {
-    const nextPermissions = mockApiService.request({
-      method: 'POST',
-      path: '/admin/roles/reset',
-      actor: currentAdmin,
-      moduleName: '权限管理',
-      action: '恢复默认权限',
-      target: '全部角色',
-      handler: () => permissionService.resetRolePermissions(),
-    });
-    setPermissions(nextPermissions);
-    refresh();
-    message.success('权限配置已恢复默认');
+  const resetPermissions = async () => {
+    try {
+      await easytradeApi.admin.resetPermissions();
+      await reloadPermissions();
+      refresh();
+      message.success('权限配置已恢复默认');
+    } catch (error) {
+      message.error(error.message);
+    }
   };
 
   return (

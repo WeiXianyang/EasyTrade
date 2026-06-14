@@ -1,8 +1,9 @@
 import { Button, Card, Descriptions, Empty, Flex, Space, Steps, Tag, Typography } from 'antd';
+import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
+import easytradeApi from '../api/easytradeApi.js';
 import PriceText from '../components/shop/PriceText.jsx';
-import orderService from '../services/orderService.js';
 import { formatCurrency, formatOrderStatus } from '../utils/format.js';
 
 const statusStep = {
@@ -15,7 +16,21 @@ const statusStep = {
 export default function OrderDetailPage() {
   const { orderId } = useParams();
   const navigate = useNavigate();
-  const order = orderService.getOrderById(orderId);
+  const [order, setOrder] = useState(null);
+
+  useEffect(() => {
+    let active = true;
+    easytradeApi.orders.detail(orderId)
+      .then((item) => {
+        if (active) setOrder(item);
+      })
+      .catch(() => {
+        if (active) setOrder(null);
+      });
+    return () => {
+      active = false;
+    };
+  }, [orderId]);
 
   if (!order) {
     return (

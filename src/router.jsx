@@ -5,6 +5,7 @@ import { createBrowserRouter } from 'react-router-dom';
 import App from './App';
 import { RequireAdmin, RequireUser } from './components/RouteGuards.jsx';
 import PageSkeleton from './components/shop/PageSkeleton.jsx';
+import { getAppBasePath } from './config/runtime.js';
 
 // ─── 懒加载所有页面组件（代码分割，减小首屏包体积）─────────────────────────────
 const AdminLayout        = lazy(() => import('./layouts/AdminLayout.jsx'));
@@ -154,6 +155,6 @@ const router = createBrowserRouter([
       },
     ],
   },
-]);
+], { basename: getAppBasePath() || undefined });
 
 export default router;

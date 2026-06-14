@@ -1,29 +1,46 @@
 import { App, Button, Drawer, Form, Input, Popconfirm, Space, Table, Typography } from 'antd';
 import { EditOutlined, PlusOutlined } from '@ant-design/icons';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
-import categoryService from '../../services/categoryService.js';
-import mockApiService from '../../services/mockApiService.js';
-import productService from '../../services/productService.js';
+import easytradeApi from '../../api/easytradeApi.js';
 import { useApp } from '../../contexts/useApp.js';
 
 export default function AdminCategoriesPage() {
   const { message } = App.useApp();
-  const { currentAdmin, refresh } = useApp();
+  const { refresh } = useApp();
   const [form] = Form.useForm();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
+  const [categories, setCategories] = useState([]);
+  const [products, setProducts] = useState([]);
   const [version, setVersion] = useState(0);
 
-  const reload = useCallback(() => {
+  const reload = useCallback(async () => {
     setVersion((v) => v + 1);
-    refresh();
+    await refresh();
   }, [refresh]);
 
-  // version 变化驱动重渲染，每次渲染重新读取最新数据
-  void version;
-  const categories = categoryService.getCategories();
-  const products = productService.getAdminProducts();
+  useEffect(() => {
+    let active = true;
+    Promise.all([
+      easytradeApi.catalog.categories(),
+      easytradeApi.catalog.adminProducts(),
+    ])
+      .then(([nextCategories, nextProducts]) => {
+        if (!active) return;
+        setCategories(nextCategories || []);
+        setProducts(nextProducts || []);
+      })
+      .catch((error) => {
+        if (!active) return;
+        setCategories([]);
+        setProducts([]);
+        message.error(error.message);
+      });
+    return () => {
+      active = false;
+    };
+  }, [message, version]);
 
   const openDrawer = (category = null) => {
     setEditingCategory(category);
@@ -37,51 +54,26 @@ export default function AdminCategoriesPage() {
     form.resetFields();
   };
 
-  const saveCategory = (values) => {
+  const saveCategory = async (values) => {
     try {
       if (editingCategory) {
-        mockApiService.request({
-          method: 'PUT',
-          path: `/admin/categories/${editingCategory.id}`,
-          actor: currentAdmin,
-          moduleName: '分类管理',
-          action: '编辑分类',
-          target: values.name,
-          handler: () => categoryService.updateCategory({ ...editingCategory, ...values }),
-        });
+        await easytradeApi.catalog.updateCategory(editingCategory.id, { ...editingCategory, ...values });
         message.success('分类已更新');
       } else {
-        mockApiService.request({
-          method: 'POST',
-          path: '/admin/categories',
-          actor: currentAdmin,
-          moduleName: '分类管理',
-          action: '新增分类',
-          target: values.name,
-          handler: () => categoryService.addCategory(values),
-        });
+        await easytradeApi.catalog.addCategory(values);
         message.success('分类已新增');
       }
       closeDrawer();
-      reload();
+      await reload();
     } catch (error) {
       message.error(error.message);
     }
   };
 
-  const deleteCategory = (categoryId) => {
+  const deleteCategory = async (categoryId) => {
     try {
-      const category = categoryService.getCategoryById(categoryId);
-      mockApiService.request({
-        method: 'DELETE',
-        path: `/admin/categories/${categoryId}`,
-        actor: currentAdmin,
-        moduleName: '分类管理',
-        action: '删除分类',
-        target: category?.name || categoryId,
-        handler: () => categoryService.deleteCategory(categoryId, products),
-      });
-      reload();
+      await easytradeApi.catalog.deleteCategory(categoryId);
+      await reload();
       message.success('分类已删除');
     } catch (error) {
       message.error(error.message);

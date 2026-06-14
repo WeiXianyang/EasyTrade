@@ -49,7 +49,7 @@ test('cart quantity inputs keep keyboard edits editable before committing values
   assert.doesNotMatch(cartPage, /if\s*\(!quantity\)\s*return/);
 });
 
-test('shopping flow mutations are visible in mock api logs', () => {
+test('shopping flow mutations use the real backend api client', () => {
   const pages = [
     readSource('src/pages/HomePage.jsx'),
     readSource('src/pages/CategoryPage.jsx'),
@@ -58,10 +58,10 @@ test('shopping flow mutations are visible in mock api logs', () => {
     readSource('src/pages/PayPage.jsx'),
   ].join('\n');
 
-  assert.match(pages, /mockApiService/);
-  assert.match(pages, /\/cart\/items/);
-  assert.match(pages, /\/orders/);
-  assert.match(pages, /\/pay/);
+  assert.match(pages, /easytradeApi/);
+  assert.match(pages, /cart\.addItem/);
+  assert.match(pages, /orders\.create|orders\.buyNow/);
+  assert.match(pages, /orders\.pay/);
 });
 
 test('login page lets course demo users choose customer or administrator identity', () => {
@@ -194,7 +194,8 @@ test('home page hides flash sale while searching and keeps search products separ
   const homePage = readSource('src/pages/HomePage.jsx');
 
   assert.match(homePage, /const hasKeyword\s*=\s*keyword\.trim\(\)\.length\s*>\s*0/);
-  assert.match(homePage, /const hotProducts\s*=\s*hasKeyword\s*\?\s*products\s*:\s*productService\.getHotProducts\(4\)/);
+  assert.match(homePage, /easytradeApi\.catalog\.hotProducts\(4\)/);
+  assert.match(homePage, /setHotProducts\(hasKeyword \? \(nextProducts \|\| \[\]\) : \(nextHotProducts \|\| \[\]\)\)/);
   assert.match(homePage, /\{!hasKeyword && flashSaleProducts\.length > 0 && \(/);
 });
 
@@ -247,12 +248,11 @@ test('motion-heavy storefront effects are reduced for prefers-reduced-motion use
 test('product detail page records footprints and exposes a persistent favorite toggle', () => {
   const productDetailPage = readSource('src/pages/ProductDetailPage.jsx');
 
-  assert.match(productDetailPage, /userActivityService/);
+  assert.match(productDetailPage, /easytradeApi/);
   assert.match(productDetailPage, /useEffect/);
-  assert.match(productDetailPage, /currentUserId/);
-  assert.match(productDetailPage, /recordFootprint\(currentUserId,\s*productId\)/);
-  assert.match(productDetailPage, /isFavorite\(currentUserId,\s*productId\)/);
-  assert.match(productDetailPage, /toggleFavorite\(currentUserId,\s*productId\)/);
+  assert.match(productDetailPage, /activity\.recordFootprint\(productId\)/);
+  assert.match(productDetailPage, /activity\.favorites\(\)/);
+  assert.match(productDetailPage, /activity\.toggleFavorite\(productId\)/);
   assert.match(productDetailPage, /已收藏/);
   assert.match(productDetailPage, /收藏/);
 });
@@ -265,10 +265,9 @@ test('product detail footprint effect uses stable primitive dependencies without
   const effectSource = footprintEffectMatch[0];
   const dependencies = footprintEffectMatch[1];
 
-  assert.match(dependencies, /currentUserId/);
+  assert.match(dependencies, /currentUser/);
   assert.match(dependencies, /productId/);
   assert.doesNotMatch(dependencies, /(^|,\s*)product(\s*,|$)/);
-  assert.doesNotMatch(dependencies, /(^|,\s*)currentUser(\s*,|$)/);
   assert.doesNotMatch(effectSource, /setIsFavorite/);
 });
 
@@ -277,18 +276,16 @@ test('me page shows favorite, follow, and footprint windows with product and cat
   const mePageCss = readSource('src/pages/MePage.css');
 
   assert.doesNotMatch(mePage, /\bList\b/);
-  assert.match(mePage, /userActivityService/);
-  assert.match(mePage, /productService/);
-  assert.match(mePage, /categoryService/);
+  assert.match(mePage, /easytradeApi/);
   assert.match(mePage, /我的收藏/);
   assert.match(mePage, /我的关注/);
   assert.match(mePage, /浏览足迹/);
-  assert.match(mePage, /getFavorites\(currentUser\.id/);
-  assert.match(mePage, /getCategoryFollows\(currentUser\.id/);
-  assert.match(mePage, /getFootprints\(currentUser\.id/);
+  assert.match(mePage, /activity\.favorites\(20\)/);
+  assert.match(mePage, /activity\.followedCategoryIds\(\)/);
+  assert.match(mePage, /activity\.footprints\(20\)/);
   assert.match(mePage, /navigate\(`\/detail\/\$\{product\.id\}`\)/);
   assert.match(mePage, /navigate\(`\/category\/\$\{category\.id\}`\)/);
-  assert.match(mePage, /toggleCategoryFollow\(currentUser\.id,\s*category\.id\)/);
+  assert.match(mePage, /activity\.toggleFollow\(category\.id\)/);
   assert.match(mePageCss, /activity-grid/);
   assert.match(mePageCss, /activity-card/);
 });

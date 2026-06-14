@@ -1,41 +1,93 @@
 import { Button, Card, Col, Empty, Image, Row, Space, Tag, Typography } from 'antd';
 import { EyeOutlined, HeartOutlined, ShoppingOutlined, TagsOutlined } from '@ant-design/icons';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+import easytradeApi from '../api/easytradeApi.js';
 import { useApp } from '../contexts/useApp.js';
-import categoryService from '../services/categoryService.js';
-import orderService from '../services/orderService.js';
-import productService from '../services/productService.js';
-import userActivityService from '../services/userActivityService.js';
 import { formatCurrency, formatOrderStatus } from '../utils/format.js';
 import './MePage.css';
 
 export default function MePage() {
   const navigate = useNavigate();
-  const { currentUser, logoutUser, refresh } = useApp();
-  const orders = orderService.getOrdersByUser(currentUser.id);
-  const favoriteProducts = userActivityService
-    .getFavorites(currentUser.id, 3)
-    .map((item) => productService.getProductById(item.productId))
-    .filter(Boolean);
-  const followedCategories = userActivityService
-    .getCategoryFollows(currentUser.id, 3)
-    .map((item) => categoryService.getCategoryById(item.categoryId))
-    .filter(Boolean);
-  const footprintProducts = userActivityService
-    .getFootprints(currentUser.id, 3)
-    .map((item) => productService.getProductById(item.productId))
-    .filter(Boolean);
-  const followedCategoryIds = new Set(userActivityService.getFollowedCategoryIds(currentUser.id));
-  const suggestedCategories = categoryService
-    .getCategories()
-    .filter((category) => !followedCategoryIds.has(category.id))
-    .slice(0, 3);
+  const { currentUser, logoutUser } = useApp();
+  const [orders, setOrders] = useState([]);
+  const [favoriteProducts, setFavoriteProducts] = useState([]);
+  const [followedCategories, setFollowedCategories] = useState([]);
+  const [footprintProducts, setFootprintProducts] = useState([]);
+  const [suggestedCategories, setSuggestedCategories] = useState([]);
+  const [activityCounts, setActivityCounts] = useState({ favorites: 0, follows: 0, footprints: 0 });
+
+  const loadActivity = useCallback(async () => {
+    const [nextOrders, favorites, footprints, followedCategoryIds, products, categories] = await Promise.all([
+      easytradeApi.orders.list(),
+      easytradeApi.activity.favorites(20),
+      easytradeApi.activity.footprints(20),
+      easytradeApi.activity.followedCategoryIds(),
+      easytradeApi.catalog.products(),
+      easytradeApi.catalog.categories(),
+    ]);
+    const productById = new Map((products || []).map((product) => [product.id, product]));
+    const categoryById = new Map((categories || []).map((category) => [category.id, category]));
+    const followedSet = new Set(followedCategoryIds || []);
+
+    setOrders(nextOrders || []);
+    setFavoriteProducts((favorites || []).slice(0, 3).map((item) => productById.get(item.productId)).filter(Boolean));
+    setFootprintProducts((footprints || []).slice(0, 3).map((item) => productById.get(item.productId)).filter(Boolean));
+    setFollowedCategories([...followedSet].slice(0, 3).map((categoryId) => categoryById.get(categoryId)).filter(Boolean));
+    setSuggestedCategories((categories || []).filter((category) => !followedSet.has(category.id)).slice(0, 3));
+    setActivityCounts({
+      favorites: (favorites || []).length,
+      follows: followedSet.size,
+      footprints: (footprints || []).length,
+    });
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    Promise.all([
+      easytradeApi.orders.list(),
+      easytradeApi.activity.favorites(20),
+      easytradeApi.activity.footprints(20),
+      easytradeApi.activity.followedCategoryIds(),
+      easytradeApi.catalog.products(),
+      easytradeApi.catalog.categories(),
+    ])
+      .then(([nextOrders, favorites, footprints, followedCategoryIds, products, categories]) => {
+        if (!active) return;
+        const productById = new Map((products || []).map((product) => [product.id, product]));
+        const categoryById = new Map((categories || []).map((category) => [category.id, category]));
+        const followedSet = new Set(followedCategoryIds || []);
+
+        setOrders(nextOrders || []);
+        setFavoriteProducts((favorites || []).slice(0, 3).map((item) => productById.get(item.productId)).filter(Boolean));
+        setFootprintProducts((footprints || []).slice(0, 3).map((item) => productById.get(item.productId)).filter(Boolean));
+        setFollowedCategories([...followedSet].slice(0, 3).map((categoryId) => categoryById.get(categoryId)).filter(Boolean));
+        setSuggestedCategories((categories || []).filter((category) => !followedSet.has(category.id)).slice(0, 3));
+        setActivityCounts({
+          favorites: (favorites || []).length,
+          follows: followedSet.size,
+          footprints: (footprints || []).length,
+        });
+      })
+      .catch(() => {
+        if (!active) return;
+        setOrders([]);
+        setFavoriteProducts([]);
+        setFootprintProducts([]);
+        setFollowedCategories([]);
+        setSuggestedCategories([]);
+        setActivityCounts({ favorites: 0, follows: 0, footprints: 0 });
+      });
+    return () => {
+      active = false;
+    };
+  }, [loadActivity]);
 
   const avatarLetter = currentUser.name?.charAt(0) || 'U';
-  const followCategory = (category) => {
-    userActivityService.toggleCategoryFollow(currentUser.id, category.id);
-    refresh();
+  const followCategory = async (category) => {
+    await easytradeApi.activity.toggleFollow(category.id);
+    await loadActivity();
   };
 
   const renderProductItem = (product) => (
@@ -149,7 +201,7 @@ export default function MePage() {
             <Card
               className="activity-card"
               title={<Space><HeartOutlined />我的收藏</Space>}
-              extra={<span className="activity-count">{userActivityService.getFavorites(currentUser.id).length}</span>}
+              extra={<span className="activity-count">{activityCounts.favorites}</span>}
             >
               {favoriteProducts.length > 0 ? (
                 <div className="activity-list">{favoriteProducts.map(renderProductItem)}</div>
@@ -162,7 +214,7 @@ export default function MePage() {
             <Card
               className="activity-card"
               title={<Space><TagsOutlined />我的关注</Space>}
-              extra={<span className="activity-count">{userActivityService.getCategoryFollows(currentUser.id).length}</span>}
+              extra={<span className="activity-count">{activityCounts.follows}</span>}
             >
               {followedCategories.length > 0 ? (
                 <div className="activity-list">
@@ -196,7 +248,7 @@ export default function MePage() {
             <Card
               className="activity-card"
               title={<Space><EyeOutlined />浏览足迹</Space>}
-              extra={<span className="activity-count">{userActivityService.getFootprints(currentUser.id).length}</span>}
+              extra={<span className="activity-count">{activityCounts.footprints}</span>}
             >
               {footprintProducts.length > 0 ? (
                 <div className="activity-list">{footprintProducts.map(renderProductItem)}</div>

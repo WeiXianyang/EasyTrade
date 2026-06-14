@@ -5,6 +5,7 @@ import { createHashRouter, Navigate } from 'react-router-dom';
 import App from './App';
 import { RequireAdmin } from './components/RouteGuards.jsx';
 import PageSkeleton from './components/shop/PageSkeleton.jsx';
+import { withAppBasePath } from './config/runtime.js';
 
 const AdminLayout = lazy(() => import('./layouts/AdminLayout.jsx'));
 const AdminDashboardPage = lazy(() => import('./pages/admin/AdminDashboardPage.jsx'));
@@ -15,10 +16,11 @@ const AdminProductsPage = lazy(() => import('./pages/admin/AdminProductsPage.jsx
 const AdminRolesPage = lazy(() => import('./pages/admin/AdminRolesPage.jsx'));
 
 const AdminLoader = <PageSkeleton />;
+const shopEntryUrl = withAppBasePath('/');
 
 const adminLogin = (
   <Suspense fallback={AdminLoader}>
-    <AdminLoginPage dashboardPath="/dashboard" shopUrl="/" />
+    <AdminLoginPage dashboardPath="/dashboard" shopUrl={shopEntryUrl} />
   </Suspense>
 );
 
@@ -35,7 +37,7 @@ const adminRouter = createHashRouter([
         element: (
           <RequireAdmin>
             <Suspense fallback={AdminLoader}>
-              <AdminLayout basePath="" shopUrl="/" />
+              <AdminLayout basePath="" shopUrl={shopEntryUrl} />
             </Suspense>
           </RequireAdmin>
         ),

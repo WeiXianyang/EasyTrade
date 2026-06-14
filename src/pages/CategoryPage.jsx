@@ -1,12 +1,11 @@
 import { FilterOutlined } from '@ant-design/icons';
 import { Button, Checkbox, Empty, Select, Space } from 'antd';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
+import easytradeApi from '../api/easytradeApi.js';
 import ProductCard from '../components/shop/ProductCard.jsx';
 import { useAddToCart } from '../hooks/useAddToCart.js';
-import categoryService from '../services/categoryService.js';
-import productService from '../services/productService.js';
 import {
   filterAndSortCategoryProducts,
   getCategoryEmptyState,
@@ -16,7 +15,8 @@ import {
 export default function CategoryPage() {
   const navigate = useNavigate();
   const handleAddCart = useAddToCart();
-  const categories = categoryService.getCategories();
+  const [categories, setCategories] = useState([]);
+  const [baseProducts, setBaseProducts] = useState([]);
   const params = useParams();
   const [searchParams] = useSearchParams();
   const routeCategoryId = params.categoryId || searchParams.get('cat') || 'all';
@@ -26,16 +26,44 @@ export default function CategoryPage() {
   const [sortMode, setSortMode] = useState('default');
   const [onlyDiscount, setOnlyDiscount] = useState(false);
   const [inStockOnly, setInStockOnly] = useState(false);
-  const baseProducts = useMemo(
-    () => {
-      if (isUnknownCategory) return [];
-
-      return productService.getVisibleProducts({
-        categoryId: categoryId === 'all' ? undefined : categoryId,
+  useEffect(() => {
+    let active = true;
+    easytradeApi.catalog.categories()
+      .then((items) => {
+        if (active) setCategories(items || []);
+      })
+      .catch(() => {
+        if (active) setCategories([]);
       });
-    },
-    [categoryId, isUnknownCategory],
-  );
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    if (isUnknownCategory) {
+      queueMicrotask(() => {
+        if (active) setBaseProducts([]);
+      });
+      return () => {
+        active = false;
+      };
+    }
+
+    easytradeApi.catalog.products({
+      categoryId: categoryId === 'all' ? undefined : categoryId,
+    })
+      .then((items) => {
+        if (active) setBaseProducts(items || []);
+      })
+      .catch(() => {
+        if (active) setBaseProducts([]);
+      });
+    return () => {
+      active = false;
+    };
+  }, [categoryId, isUnknownCategory]);
   const products = useMemo(
     () => filterAndSortCategoryProducts(baseProducts, { sortMode, onlyDiscount, inStockOnly }),
     [baseProducts, inStockOnly, onlyDiscount, sortMode],
