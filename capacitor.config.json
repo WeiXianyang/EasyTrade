@@ -1,5 +1,9 @@
 {
   "appId": "com.easytrade.app",
   "appName": "EasyTrade",
-  "webDir": "dist"
+  "webDir": "dist",
+  "server": {
+    "url": "https://www.helvzn.com/easytrade/",
+    "cleartext": false
+  }
 }
