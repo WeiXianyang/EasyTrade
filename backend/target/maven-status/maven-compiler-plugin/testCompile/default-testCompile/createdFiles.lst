@@ -1,0 +1,5 @@
+com\easytrade\CatalogServiceTests.class
+com\easytrade\EasyTradeApplicationTests.class
+com\easytrade\AdminOpsServiceTests.class
+com\easytrade\CartOrderServiceTests.class
+com\easytrade\AuthServiceTests.class

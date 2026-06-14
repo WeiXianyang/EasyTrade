@@ -1,0 +1,24 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:easytrade;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+
+easytrade:
+  jwt:
+    secret: test-easytrade-secret-test-easytrade-secret
+    expiration-ms: 86400000
+  sms:
+    access-key-id: test
+    access-key-secret: test
+    sign-name: test
+    template-code: test
+    region: cn-qingdao
