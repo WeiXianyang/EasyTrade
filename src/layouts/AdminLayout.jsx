@@ -14,7 +14,7 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 
 import AdminOpsTools from '../components/admin/AdminOpsTools.jsx';
 import { useApp } from '../contexts/useApp.js';
-import { canAccess, getRoleLabel } from '../services/permissionService.js';
+import { getRoleLabel } from '../services/permissionService.js';
 
 function adminPath(basePath, path = '') {
   const prefix = basePath || '';
@@ -34,10 +34,10 @@ function createAdminItems(basePath) {
 export default function AdminLayout({ basePath = '/admin', shopUrl = '/' }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { currentAdmin, logoutAdmin, theme, toggleTheme } = useApp();
+  const { canAccessAdminModule, currentAdmin, logoutAdmin, theme, toggleTheme } = useApp();
   const allItems = createAdminItems(basePath);
   const items = allItems
-    .filter((item) => canAccess(currentAdmin.role, item.moduleName))
+    .filter((item) => canAccessAdminModule(item.moduleName))
     .map((item) => ({ key: item.key, icon: item.icon, label: item.label }));
   const selectedKey = [...items].reverse().find((item) => location.pathname === item.key)?.key || allItems[0].key;
 

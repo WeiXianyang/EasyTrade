@@ -5,8 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 import ProductCard from '../components/shop/ProductCard.jsx';
 import { useAddToCart } from '../hooks/useAddToCart.js';
-import categoryService from '../services/categoryService.js';
-import productService from '../services/productService.js';
+import easytradeApi from '../api/easytradeApi.js';
 import FancySearch from '../components/shop/FancySearch.jsx';
 import { formatCurrency } from '../utils/format.js';
 
@@ -16,6 +15,9 @@ export default function HomePage() {
   const navigate = useNavigate();
   const handleAddCart = useAddToCart();
   const [keyword, setKeyword] = useState('');
+  const [categories, setCategories] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [hotProducts, setHotProducts] = useState([]);
 
   const [isScrolled, setIsScrolled] = useState(false);
   useEffect(() => {
@@ -34,10 +36,44 @@ export default function HomePage() {
     return () => clearInterval(timer);
   }, []);
 
-  const categories = categoryService.getCategories();
   const hasKeyword = keyword.trim().length > 0;
-  const products = useMemo(() => productService.getVisibleProducts({ keyword }), [keyword]);
-  const hotProducts = hasKeyword ? products : productService.getHotProducts(4);
+
+  useEffect(() => {
+    let active = true;
+    easytradeApi.catalog.categories()
+      .then((items) => {
+        if (active) setCategories(items || []);
+      })
+      .catch(() => {
+        if (active) setCategories([]);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    const filters = hasKeyword ? { keyword } : {};
+    Promise.all([
+      easytradeApi.catalog.products(filters),
+      hasKeyword ? Promise.resolve(null) : easytradeApi.catalog.hotProducts(4),
+    ])
+      .then(([nextProducts, nextHotProducts]) => {
+        if (!active) return;
+        setProducts(nextProducts || []);
+        setHotProducts(hasKeyword ? (nextProducts || []) : (nextHotProducts || []));
+      })
+      .catch(() => {
+        if (!active) return;
+        setProducts([]);
+        setHotProducts([]);
+      });
+    return () => {
+      active = false;
+    };
+  }, [hasKeyword, keyword]);
+
   const flashSaleProducts = useMemo(() => products
     .filter((product) => product.originalPrice > product.price)
     .sort((a, b) => (b.originalPrice - b.price) - (a.originalPrice - a.price))

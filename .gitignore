@@ -6,6 +6,7 @@ node_modules/
 # Build outputs and caches
 dist/
 dist-ssr/
+backend/target/
 .vite/
 coverage/
 .nyc_output/
@@ -20,6 +21,8 @@ coverage/
 .env
 .env.*
 !.env.example
+!.env.development
+!.env.production
 
 # Logs
 logs/

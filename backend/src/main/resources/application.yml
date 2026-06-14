@@ -1,0 +1,37 @@
+spring:
+  application:
+    name: easytrade-backend
+  datasource:
+    url: ${EASYTRADE_DB_URL:jdbc:postgresql://127.0.0.1:5432/easytrade_db}
+    username: ${EASYTRADE_DB_USERNAME:easytrade}
+    password: ${EASYTRADE_DB_PASSWORD:}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 50MB
+
+server:
+  port: ${EASYTRADE_SERVER_PORT:8010}
+
+easytrade:
+  jwt:
+    secret: ${EASYTRADE_JWT_SECRET:change-this-easytrade-secret-in-production}
+    expiration-ms: ${EASYTRADE_JWT_EXPIRATION_MS:86400000}
+  sms:
+    access-key-id: ${ALIBABA_CLOUD_ACCESS_KEY_ID:}
+    access-key-secret: ${ALIBABA_CLOUD_ACCESS_KEY_SECRET:}
+    sign-name: ${EASYTRADE_SMS_SIGN_NAME:}
+    template-code: ${EASYTRADE_SMS_TEMPLATE_CODE:}
+    region: ${EASYTRADE_SMS_REGION:cn-qingdao}
+
+logging:
+  level:
+    com.easytrade: INFO

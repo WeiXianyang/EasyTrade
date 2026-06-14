@@ -1,11 +1,9 @@
 import { App, Button, Drawer, Popconfirm, Space, Table, Tag, Typography } from 'antd';
 import { ApiOutlined, DeleteOutlined, HistoryOutlined, ThunderboltOutlined } from '@ant-design/icons';
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
+import easytradeApi from '../../api/easytradeApi.js';
 import { useApp } from '../../contexts/useApp.js';
-import auditLogService from '../../services/auditLogService.js';
-import demoService from '../../services/demoService.js';
-import requestLogService from '../../services/requestLogService.js';
 
 function statusColor(status) {
   if (status >= 200 && status < 300) return 'green';
@@ -15,28 +13,71 @@ function statusColor(status) {
 
 export default function AdminOpsTools() {
   const { message } = App.useApp();
-  const { currentAdmin, refresh, version } = useApp();
+  const { refresh, version } = useApp();
   const [requestOpen, setRequestOpen] = useState(false);
   const [auditOpen, setAuditOpen] = useState(false);
-  const requestLogs = requestLogService.getRequestLogs(40);
-  const auditLogs = auditLogService.getAuditLogs(40);
+  const [requestLogs, setRequestLogs] = useState([]);
+  const [auditLogs, setAuditLogs] = useState([]);
 
-  const resetDemo = () => {
-    demoService.resetDemoData(currentAdmin);
-    refresh();
-    message.success('演示数据已重置，购买链路可以从固定场景重新开始');
+  const loadLogs = useCallback(async () => {
+    const [nextRequestLogs, nextAuditLogs] = await Promise.all([
+      easytradeApi.admin.requestLogs(40),
+      easytradeApi.admin.auditLogs(40),
+    ]);
+    setRequestLogs(nextRequestLogs || []);
+    setAuditLogs(nextAuditLogs || []);
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    Promise.all([
+      easytradeApi.admin.requestLogs(40),
+      easytradeApi.admin.auditLogs(40),
+    ])
+      .then(([nextRequestLogs, nextAuditLogs]) => {
+        if (!active) return;
+        setRequestLogs(nextRequestLogs || []);
+        setAuditLogs(nextAuditLogs || []);
+      })
+      .catch(() => {
+        if (!active) return;
+        setRequestLogs([]);
+        setAuditLogs([]);
+      });
+    return () => {
+      active = false;
+    };
+  }, [loadLogs, version]);
+
+  const resetDemo = async () => {
+    try {
+      await easytradeApi.admin.resetDemo();
+      await refresh();
+      await loadLogs();
+      message.success('演示数据已重置，购买链路可以从固定场景重新开始');
+    } catch (error) {
+      message.error(error.message);
+    }
   };
 
-  const clearRequestLogs = () => {
-    requestLogService.clearRequestLogs();
-    refresh();
-    message.success('请求日志已清空');
+  const clearRequestLogs = async () => {
+    try {
+      await easytradeApi.admin.clearRequestLogs();
+      await loadLogs();
+      message.success('请求日志已清空');
+    } catch (error) {
+      message.error(error.message);
+    }
   };
 
-  const clearAuditLogs = () => {
-    auditLogService.clearAuditLogs();
-    refresh();
-    message.success('操作审计已清空');
+  const clearAuditLogs = async () => {
+    try {
+      await easytradeApi.admin.clearAuditLogs();
+      await loadLogs();
+      message.success('操作审计已清空');
+    } catch (error) {
+      message.error(error.message);
+    }
   };
 
   return (
@@ -54,7 +95,7 @@ export default function AdminOpsTools() {
       </Popconfirm>
 
       <Drawer
-        title="Mock API 请求日志"
+        title="后端请求日志"
         size="large"
         open={requestOpen}
         onClose={() => setRequestOpen(false)}
@@ -65,7 +106,7 @@ export default function AdminOpsTools() {
         }
       >
         <Typography.Paragraph className="muted">
-          前台和后台核心操作会写入类似 REST 的请求记录，便于答辩时展示数据流。
+          前台和后台核心操作会写入后端请求记录，便于答辩时展示数据流。
         </Typography.Paragraph>
         <Table
           rowKey="id"

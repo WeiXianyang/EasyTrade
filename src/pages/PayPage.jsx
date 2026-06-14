@@ -2,19 +2,32 @@ import { App, Button, Card, Progress, Result, Space, Steps, Typography } from 'a
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
+import easytradeApi from '../api/easytradeApi.js';
 import { useApp } from '../contexts/useApp.js';
-import mockApiService from '../services/mockApiService.js';
-import orderService from '../services/orderService.js';
 import { formatCurrency, formatOrderStatus } from '../utils/format.js';
 
 export default function PayPage() {
   const { orderId } = useParams();
   const navigate = useNavigate();
   const { message } = App.useApp();
-  const { currentUser, refresh } = useApp();
+  const { refresh } = useApp();
   const [seconds, setSeconds] = useState(60);
   const [paid, setPaid] = useState(false);
-  const order = orderService.getOrderById(orderId);
+  const [order, setOrder] = useState(null);
+
+  useEffect(() => {
+    let active = true;
+    easytradeApi.orders.detail(orderId)
+      .then((item) => {
+        if (active) setOrder(item);
+      })
+      .catch(() => {
+        if (active) setOrder(null);
+      });
+    return () => {
+      active = false;
+    };
+  }, [orderId]);
 
   useEffect(() => {
     if (!order || order.status !== 'pending-payment') {
@@ -36,19 +49,12 @@ export default function PayPage() {
     );
   }
 
-  const handlePay = () => {
+  const handlePay = async () => {
     try {
-      mockApiService.request({
-        method: 'PATCH',
-        path: `/orders/${order.id}/pay`,
-        actor: currentUser,
-        moduleName: '前台支付',
-        action: '模拟支付',
-        target: order.orderNo,
-        handler: () => orderService.payOrder(order.id),
-      });
+      const paidOrder = await easytradeApi.orders.pay(order.id);
+      setOrder(paidOrder);
       setPaid(true);
-      refresh();
+      await refresh();
       message.success('支付成功');
     } catch (error) {
       message.error(error.message);
@@ -60,7 +66,7 @@ export default function PayPage() {
       <Result
         status="success"
         title="支付成功"
-        subTitle={`订单 ${order.orderNo} 当前状态：${formatOrderStatus(orderService.getOrderById(order.id).status)}`}
+        subTitle={`订单 ${order.orderNo} 当前状态：${formatOrderStatus(order.status)}`}
         extra={[
           <Button type="primary" key="detail" onClick={() => navigate(`/orders/${order.id}`)}>
             查看订单详情

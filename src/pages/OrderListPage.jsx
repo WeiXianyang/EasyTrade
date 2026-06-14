@@ -1,8 +1,8 @@
 import { Button, Empty, Space, Table, Tag, Typography } from 'antd';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { useApp } from '../contexts/useApp.js';
-import orderService from '../services/orderService.js';
+import easytradeApi from '../api/easytradeApi.js';
 import { formatCurrency, formatOrderStatus } from '../utils/format.js';
 
 const statusColor = {
@@ -15,8 +15,21 @@ const statusColor = {
 
 export default function OrderListPage() {
   const navigate = useNavigate();
-  const { currentUser } = useApp();
-  const orders = orderService.getOrdersByUser(currentUser.id);
+  const [orders, setOrders] = useState([]);
+
+  useEffect(() => {
+    let active = true;
+    easytradeApi.orders.list()
+      .then((items) => {
+        if (active) setOrders(items || []);
+      })
+      .catch(() => {
+        if (active) setOrders([]);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   if (orders.length === 0) {
     return (

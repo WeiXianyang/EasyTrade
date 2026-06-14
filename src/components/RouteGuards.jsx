@@ -1,7 +1,6 @@
 import { Navigate, useLocation } from 'react-router-dom';
 
 import { useApp } from '../contexts/useApp.js';
-import { canAccess } from '../services/permissionService.js';
 
 export function RequireUser({ children }) {
   const { currentUser } = useApp();
@@ -15,13 +14,13 @@ export function RequireUser({ children }) {
 }
 
 export function RequireAdmin({ moduleName, children }) {
-  const { currentAdmin } = useApp();
+  const { canAccessAdminModule, currentAdmin } = useApp();
 
   if (!currentAdmin) {
     return <Navigate to="/admin/login" replace />;
   }
 
-  if (moduleName && !canAccess(currentAdmin.role, moduleName)) {
+  if (moduleName && !canAccessAdminModule(moduleName)) {
     return <Navigate to="/admin" replace />;
   }
 
