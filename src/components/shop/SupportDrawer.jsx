@@ -30,11 +30,13 @@ export default function SupportDrawer({ open, onClose }) {
   const { message } = App.useApp();
   const [messages, setMessages] = useState(initialMessages);
   const [loading, setLoading] = useState(false);
+  const [question, setQuestion] = useState('');
 
   const ask = async (value) => {
     const text = String(value || '').trim();
     if (!text || loading) return;
 
+    setQuestion('');
     setMessages((current) => [...current, createMessage('user', text)]);
     setLoading(true);
 
@@ -107,7 +109,9 @@ export default function SupportDrawer({ open, onClose }) {
           enterButton="发送"
           loading={loading}
           disabled={loading}
-          onSearch={ask}
+          value={question}
+          onChange={(event) => setQuestion(event.target.value)}
+          onSearch={() => ask(question)}
         />
       </Flex>
     </Drawer>

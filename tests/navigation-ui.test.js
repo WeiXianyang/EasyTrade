@@ -113,6 +113,16 @@ test('smart support uses environment config and local product fallback', () => {
   assert.doesNotMatch(envExample, /sk-/);
 });
 
+test('smart support clears the typed question after sending', () => {
+  const supportDrawer = readSource('src/components/shop/SupportDrawer.jsx');
+
+  assert.match(supportDrawer, /const \[question,\s*setQuestion\]\s*=\s*useState\(''\)/);
+  assert.match(supportDrawer, /setQuestion\(''\)/);
+  assert.match(supportDrawer, /value=\{question\}/);
+  assert.match(supportDrawer, /onChange=\{\(event\) => setQuestion\(event\.target\.value\)\}/);
+  assert.match(supportDrawer, /onSearch=\{\(\) => ask\(question\)\}/);
+});
+
 test('category page exposes price, sales, discount, and stock filters', () => {
   const categoryPage = readSource('src/pages/CategoryPage.jsx');
 
