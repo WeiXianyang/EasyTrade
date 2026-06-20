@@ -113,3 +113,41 @@ test('submission packager includes project standards files', () => {
     assert.match(packScript, new RegExp(`'${file.replaceAll('.', '\\.').replaceAll('/', '\\/')}'`));
   }
 });
+
+test('submission packager includes admin entry and backend source without build output', () => {
+  const packScript = readProjectFile('tool/pack.cjs');
+
+  assert.match(packScript, /'admin\.html'/);
+  assert.match(packScript, /'\.env\.example'/);
+  assert.match(packScript, /backend\/pom\.xml/);
+  assert.match(packScript, /backend\/src/);
+  assert.doesNotMatch(packScript, /backend\/target/);
+});
+
+test('bonus checklist is documented with concrete completion evidence', () => {
+  const readme = readProjectFile('README.md');
+  const report = readProjectFile('Report.md');
+
+  const bonusItems = [
+    '后端联动',
+    '数据持久化',
+    '表单验证',
+    '分页/无限滚动',
+    '支付模拟优化',
+    '响应式布局',
+    '性能优化',
+    '单元测试',
+    '部署上线',
+  ];
+
+  for (const item of bonusItems) {
+    assert.match(readme, new RegExp(item));
+    assert.match(report, new RegExp(item));
+  }
+
+  assert.match(readme, /https:\/\/www\.helvzn\.com\/easytrade\/?/);
+  assert.match(readme, /React\.memo/);
+  assert.match(readme, /useCallback/);
+  assert.match(readme, /lazy \+ Suspense/);
+  assert.match(report, /\[x\]\s+\*\*部署上线\*\*/);
+});

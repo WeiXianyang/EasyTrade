@@ -1,5 +1,5 @@
 import { FilterOutlined } from '@ant-design/icons';
-import { Button, Checkbox, Empty, Select, Space } from 'antd';
+import { Button, Checkbox, Empty, Pagination, Select, Space } from 'antd';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
@@ -11,6 +11,8 @@ import {
   getCategoryEmptyState,
   getCategoryPath,
 } from './categoryPageUtils.js';
+
+const categoryPageSize = 4;
 
 export default function CategoryPage() {
   const navigate = useNavigate();
@@ -26,6 +28,7 @@ export default function CategoryPage() {
   const [sortMode, setSortMode] = useState('default');
   const [onlyDiscount, setOnlyDiscount] = useState(false);
   const [inStockOnly, setInStockOnly] = useState(false);
+  const [paginationState, setPaginationState] = useState({ key: '', page: 1 });
   useEffect(() => {
     let active = true;
     easytradeApi.catalog.categories()
@@ -68,6 +71,16 @@ export default function CategoryPage() {
     () => filterAndSortCategoryProducts(baseProducts, { sortMode, onlyDiscount, inStockOnly }),
     [baseProducts, inStockOnly, onlyDiscount, sortMode],
   );
+  const paginationKey = `${categoryId}:${sortMode}:${onlyDiscount}:${inStockOnly}`;
+  const currentPage = paginationState.key === paginationKey ? paginationState.page : 1;
+  const effectivePage = Math.min(currentPage, Math.max(1, Math.ceil(products.length / categoryPageSize)));
+  const paginatedProducts = useMemo(() => {
+    const startIndex = (effectivePage - 1) * categoryPageSize;
+    return products.slice(startIndex, startIndex + categoryPageSize);
+  }, [effectivePage, products]);
+  const setCurrentPage = (page) => {
+    setPaginationState({ key: paginationKey, page });
+  };
 
   const currentCategory = categoryId === 'all' ? null : categories.find((c) => c.id === categoryId);
   const categoryTitle = isUnknownCategory ? '未知分类' : currentCategory ? currentCategory.name : '全部商品';
@@ -86,7 +99,10 @@ export default function CategoryPage() {
           <button
             type="button"
             className={`category-tab${categoryId === 'all' ? ' active' : ''}`}
-            onClick={() => navigate(getCategoryPath('all'))}
+            onClick={() => {
+              setCurrentPage(1);
+              navigate(getCategoryPath('all'));
+            }}
           >
             所有商品
           </button>
@@ -95,7 +111,10 @@ export default function CategoryPage() {
               type="button"
               key={cat.id}
               className={`category-tab${categoryId === cat.id ? ' active' : ''}`}
-              onClick={() => navigate(getCategoryPath(cat.id))}
+              onClick={() => {
+                setCurrentPage(1);
+                navigate(getCategoryPath(cat.id));
+              }}
             >
               {cat.name}
             </button>
@@ -118,7 +137,10 @@ export default function CategoryPage() {
           <Select
             size="small"
             value={sortMode}
-            onChange={setSortMode}
+            onChange={(nextSortMode) => {
+              setCurrentPage(1);
+              setSortMode(nextSortMode);
+            }}
             style={{ width: 120 }}
             options={[
               { label: '默认排序', value: 'default' },
@@ -128,10 +150,16 @@ export default function CategoryPage() {
               { label: '折扣优先', value: 'discount-desc' },
             ]}
           />
-          <Checkbox checked={onlyDiscount} onChange={(event) => setOnlyDiscount(event.target.checked)}>
+          <Checkbox checked={onlyDiscount} onChange={(event) => {
+            setCurrentPage(1);
+            setOnlyDiscount(event.target.checked);
+          }}>
             仅优惠
           </Checkbox>
-          <Checkbox checked={inStockOnly} onChange={(event) => setInStockOnly(event.target.checked)}>
+          <Checkbox checked={inStockOnly} onChange={(event) => {
+            setCurrentPage(1);
+            setInStockOnly(event.target.checked);
+          }}>
             库存充足
           </Checkbox>
         </Space>
@@ -146,6 +174,7 @@ export default function CategoryPage() {
               {canClearFilters && (
                 <Button
                   onClick={() => {
+                    setCurrentPage(1);
                     setSortMode('default');
                     setOnlyDiscount(false);
                     setInStockOnly(false);
@@ -158,13 +187,27 @@ export default function CategoryPage() {
           </Empty>
         </div>
       ) : (
-        <div className="category-product-grid">
-          {products.map((product) => (
-            <div key={product.id} className="category-product-item">
-              <ProductCard product={product} onAddCart={handleAddCart} />
+        <>
+          <div className="category-product-grid">
+            {paginatedProducts.map((product) => (
+              <div key={product.id} className="category-product-item">
+                <ProductCard product={product} onAddCart={handleAddCart} />
+              </div>
+            ))}
+          </div>
+          {products.length > categoryPageSize && (
+            <div className="category-pagination">
+              <Pagination
+                current={effectivePage}
+                pageSize={categoryPageSize}
+                total={products.length}
+                onChange={setCurrentPage}
+                showSizeChanger={false}
+                responsive
+              />
             </div>
-          ))}
-        </div>
+          )}
+        </>
       )}
 
     </Space>

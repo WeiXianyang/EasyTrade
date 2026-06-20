@@ -92,6 +92,7 @@ archive.pipe(output);
 // Include tests and tooling because package.json exposes those commands.
 const PACK_DIRS = [
   { src: 'src',    dest: 'src' },
+  { src: 'backend/src', dest: 'backend/src' },
   { src: 'public', dest: 'public' },
   { src: 'tests',  dest: 'tests' },
   { src: 'tool',   dest: 'tool' },
@@ -101,6 +102,8 @@ const PACK_FILES = [
   '.editorconfig',
   '.gitattributes',
   '.gitignore',
+  '.env.example',
+  'admin.html',
   'CONTRIBUTING.md',
   'CHANGELOG.md',
   'README.md',
@@ -110,6 +113,7 @@ const PACK_FILES = [
   'package-lock.json',
   'package.json',
   'Report.md',
+  'backend/pom.xml',
   'vite.config.js',
   'index.html',
   'eslint.config.js',

@@ -33,3 +33,22 @@ test('category tabs are accessible buttons and navigate through category URLs', 
   assert.equal(getCategoryPath('all'), '/category');
   assert.equal(getCategoryPath('digital'), '/category/digital');
 });
+
+test('category product list exposes explicit frontend pagination', () => {
+  const categoryPage = readSource('src/pages/CategoryPage.jsx');
+
+  assert.match(categoryPage, /Pagination/);
+  assert.match(categoryPage, /currentPage/);
+  assert.match(categoryPage, /paginatedProducts/);
+  assert.match(categoryPage, /const categoryPageSize = 4/);
+  assert.match(categoryPage, /pageSize=\{categoryPageSize\}/);
+});
+
+test('category pagination leaves room for fixed mobile bottom navigation', () => {
+  const themeCss = readSource('src/theme/theme.css');
+  const mobileBlock = themeCss.match(/@media \(max-width: 760px\)[\s\S]*?(?=\n@media \(max-width: \d+px\))/)?.[0] || '';
+
+  assert.match(themeCss, /\.category-pagination/);
+  assert.match(mobileBlock, /\.category-pagination/);
+  assert.match(mobileBlock, /padding-bottom:\s*96px/);
+});
